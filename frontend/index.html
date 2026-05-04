@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>השוואת ערים – Family Project</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;800;900&family=Inter:wght@400;500;600;700&family=Heebo:wght@400;700;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "on-background": "#181c1e",
+            "on-surface": "#181c1e",
+            "on-surface-variant": "#414750",
+            "surface": "#f7fafc",
+            "surface-dim": "#d7dadc",
+            "surface-bright": "#f7fafc",
+            "surface-variant": "#e0e3e5",
+            "surface-container": "#ebeef0",
+            "surface-container-low": "#f1f4f6",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-high": "#e5e9eb",
+            "surface-container-highest": "#e0e3e5",
+            "primary": "#004471",
+            "primary-container": "#005c97",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#add3ff",
+            "secondary": "#006972",
+            "secondary-container": "#8feefc",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#006d77",
+            "tertiary": "#004d10",
+            "tertiary-container": "#13671f",
+            "tertiary-fixed": "#a3f69c",
+            "on-tertiary-fixed": "#002204",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "on-error-container": "#93000a",
+            "outline": "#717881",
+            "outline-variant": "#c1c7d1",
+          },
+          fontFamily: {
+            headline: ["Work Sans", "Heebo", "sans-serif"],
+            body: ["Inter", "Assistant", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', 'Assistant', sans-serif; background-color: #f7fafc; color: #181c1e; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .hero-gradient { background: linear-gradient(135deg, #004471 0%, #005c97 100%); }
+
+    /* City autocomplete */
+    .city-dropdown { display: none; }
+    .city-dropdown.open { display: block; }
+
+    /* Carousel */
+    .carousel-track { display: flex; overflow: hidden; }
+    .carousel-track .city-card-slide { min-width: 100%; flex: 0 0 100%; transition: transform 360ms cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Winner cell highlight */
+    .winner-cell { background: linear-gradient(0deg, rgba(163, 246, 156, 0.2), rgba(163, 246, 156, 0.2)), #ffffff; }
+    .city-medal {
+      display: inline-block;
+      line-height: 1;
+      font-size: 1.15rem;
+    }
+
+    /* Ambient shadow */
+    .ambient-shadow { box-shadow: 0 12px 32px -4px rgba(24, 28, 30, 0.08); }
+
+    /* Zebra rows */
+    .zebra-row:nth-child(even) { background: rgba(241, 244, 246, 0.3); }
+    .zebra-row:hover { background: rgba(241, 244, 246, 0.6); }
+    .category-section { margin-bottom: 0.75rem; }
+    .category-header {
+      width: 100%;
+      position: relative;
+      display: block;
+      padding: 1rem 1.25rem;
+      border: none;
+      background: linear-gradient(135deg, rgba(0, 68, 113, 0.14), rgba(0, 105, 114, 0.12));
+      color: #004471;
+      font-family: 'Work Sans', 'Heebo', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+    }
+    .category-header:hover { background: linear-gradient(135deg, rgba(0, 68, 113, 0.18), rgba(0, 105, 114, 0.15)); }
+    .category-header:focus-visible {
+      outline: 3px solid rgba(0, 105, 114, 0.22);
+      outline-offset: -3px;
+    }
+    .category-title {
+      display: block;
+      width: 100%;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+    .category-arrow {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 180ms ease;
+    }
+    .category-arrow.expanded { transform: translateY(-50%) rotate(180deg); }
+    .comparison-scroll-shell {
+      overflow-x: auto;
+      overflow-y: visible;
+    }
+    .sticky-header-wrapper {
+      position: sticky;
+      top: 3.5rem;
+      z-index: 15;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      background: #ffffff;
+    }
+    .sticky-header-wrapper::-webkit-scrollbar { display: none; }
+    .sticky-city-header-row {
+      box-shadow: 0 10px 18px -16px rgba(24, 28, 30, 0.28);
+    }
+    .sticky-city-header-cell {
+      background: #ffffff;
+      border-bottom: 1px solid rgba(193, 199, 209, 0.7);
+      position: relative;
+      z-index: 20;
+    }
+    .sticky-city-header-cell:first-child {
+      background: #f8fafb;
+      position: sticky;
+      right: 0;
+      z-index: 30;
+      box-shadow: -8px 0 14px -14px rgba(24, 28, 30, 0.28);
+    }
+    .sticky-label-cell {
+      position: sticky;
+      right: 0;
+      z-index: 12;
+      background: #f8fafb;
+      box-shadow: -8px 0 14px -14px rgba(24, 28, 30, 0.22);
+    }
+    .comparison-row-cell {
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+    }
+    .comparison-label-cell {
+      font-weight: 700;
+      color: #181c1e;
+    }
+    .comparison-value-cell {
+      text-align: center;
+      color: #414750;
+    }
+    .comparison-value {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      line-height: 1.15;
+      font-weight: 700;
+      color: #0f1720;
+    }
+    .comparison-value.numeric-value {
+      font-weight: 800;
+      color: #0f1720;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.01em;
+    }
+    .section-grid-row {
+      display: grid;
+      align-items: stretch;
+      background: #ffffff;
+    }
+    .section-grid-label {
+      padding: 1.25rem;
+      text-align: right;
+      font-weight: 700;
+      color: #181c1e;
+      background: #f8fafb;
+      border-bottom: 1px solid rgba(193, 199, 209, 0.55);
+    }
+    .section-grid-cell {
+      padding: 1.25rem;
+      text-align: center;
+      background: #ffffff;
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+      border-inline-start: 1px solid rgba(224, 227, 229, 0.9);
+    }
+    .section-grid-cell.winner-cell {
+      background: linear-gradient(0deg, rgba(163, 246, 156, 0.2), rgba(163, 246, 156, 0.2)), #ffffff;
+    }
+    .section-grid-merged {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 0.75rem;
+      text-align: center;
+      font-weight: 700;
+      color: #0f1720;
+      background: #f1f4f6;
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+      border-inline-start: 1px solid rgba(224, 227, 229, 0.9);
+    }
+    .rank-display-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      line-height: 1.05;
+      text-align: center;
+    }
+    .rank-display-caption,
+    .rank-display-subcaption {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #5a616b;
+    }
+    .rank-display-value {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #0f1720;
+    }
+    .tax-note {
+      text-align: center;
+      padding: 1.25rem;
+      color: #414750;
+      font-weight: 600;
+      background: rgba(241, 244, 246, 0.45);
+    }
+    .tax-grid-row {
+      display: grid;
+      align-items: stretch;
+      background: #ffffff;
+    }
+    .tax-grid-label {
+      padding: 1.25rem;
+      text-align: right;
+      font-weight: 700;
+      color: #181c1e;
+      background: #f8fafb;
+      border-bottom: 1px solid rgba(193, 199, 209, 0.55);
+    }
+    .tax-grid-cell {
+      padding: 1.25rem;
+      text-align: center;
+      background: #ffffff;
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+      border-inline-start: 1px solid rgba(224, 227, 229, 0.9);
+    }
+    .tax-grid-cell.winner-cell {
+      background: linear-gradient(0deg, rgba(163, 246, 156, 0.2), rgba(163, 246, 156, 0.2)), #ffffff;
+    }
+    .tax-grid-merged {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 0.75rem;
+      text-align: center;
+      font-weight: 700;
+      color: #414750;
+      background: #f1f4f6;
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+      border-inline-start: 1px solid rgba(224, 227, 229, 0.9);
+    }
+    .merged-value-row {
+      display: grid;
+      align-items: stretch;
+      background: #ffffff;
+    }
+    .merged-value-label {
+      padding: 1.25rem;
+      text-align: right;
+      font-weight: 700;
+      color: #181c1e;
+      background: #f8fafb;
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+    }
+    .merged-value-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      text-align: center;
+      font-weight: 600;
+      color: #414750;
+      background: #ffffff;
+      border-bottom: 1px solid rgba(224, 227, 229, 0.9);
+    }
+
+    /* Overview */
+    #overview { display: none; }
+    #overview.visible { display: grid; }
+
+    /* Smooth input transitions */
+    .field-input { transition: box-shadow 160ms ease, border-color 160ms ease; }
+    .field-input:focus { box-shadow: 0 0 0 3px rgba(0, 105, 114, 0.25); border-color: #006972; }
+    select.field-input {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23414750' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: left 0.9rem center;
+      background-size: 1rem;
+      padding-inline-start: 2.75rem;
+      padding-inline-end: 1rem;
+      text-align: start;
+      direction: rtl;
+    }
+    select.field-input::-ms-expand { display: none; }
+
+    /* Carousel dots */
+    .carousel-dot { transition: background 200ms ease, transform 200ms ease; }
+    .carousel-dot.active { background: #004471; transform: scale(1.3); }
+  </style>
+</head>
+<body class="bg-surface text-on-background">
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-xl px-6 py-3 text-sm font-medium ambient-shadow max-w-lg transition-opacity duration-300" style="opacity:0;pointer-events:none;"></div>
+
+<!-- ── Top Nav Bar ── -->
+<nav class="fixed top-0 left-0 w-full flex flex-row-reverse justify-between items-center px-6 md:px-8 py-4 bg-surface/80 backdrop-blur-xl z-50 border-b border-outline-variant/10 font-headline">
+  <div class="flex items-center gap-6 flex-row-reverse">
+    <span class="text-2xl font-black tracking-tighter text-primary">FamilyProject</span>
+    <div class="hidden md:flex flex-row-reverse gap-5">
+      <a class="text-primary border-b-2 border-primary pb-1 font-bold text-sm" href="#">השוואה</a>
+      <a class="text-on-surface-variant hover:text-primary transition-colors text-sm" href="#">מידע</a>
+    </div>
+  </div>
+</nav>
+
+<main class="pt-20">
+
+<!-- ── Hero Section ── -->
+<section class="relative min-h-[420px] flex items-center justify-center overflow-hidden">
+  <div class="absolute inset-0 z-0 hero-gradient opacity-[0.06]"></div>
+  <div class="absolute inset-0 z-0">
+    <div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent"></div>
+  </div>
+  <div class="relative z-10 container mx-auto px-6 text-center py-16">
+    <h1 class="font-headline text-4xl md:text-6xl font-black text-primary mb-4 tracking-tight leading-tight">
+      השוואת ערים לפני מעבר דירה
+    </h1>
+    <p class="font-body text-lg text-on-surface-variant max-w-2xl mx-auto mb-10 leading-relaxed">
+      הזינו את פרטי המשפחה, נתוני הנסיעה לעבודה וערי היעד.
+      המערכת תציג השוואה מקיפה הכוללת מיסים, תחבורה, חינוך, ביטחון ואיכות חיים.
+    </p>
+  </div>
+</section>
+
+<!-- ── Form Section ── -->
+<section class="pb-12 bg-surface">
+  <div class="container mx-auto px-4 md:px-6 max-w-5xl">
+    <div class="bg-surface-container-lowest rounded-3xl ambient-shadow overflow-hidden">
+      <form id="compare-form">
+
+        <!-- Connection (collapsed by default) -->
+        <div class="p-6 md:p-8 bg-surface-container-low/40">
+          <button type="button" id="toggle-connection" class="flex items-center gap-2 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors bg-transparent shadow-none p-0">
+            <span class="material-symbols-outlined text-lg" id="toggle-connection-icon">expand_more</span>
+            הגדרות חיבור מתקדמות
+          </button>
+          <div id="connection-fields" class="hidden mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="api-base">כתובת API</label>
+                <input id="api-base" name="apiBase" type="text" value="http://127.0.0.1:8000" dir="ltr"
+                  class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="departure-date">תאריך עזיבה</label>
+                <input id="departure-date" name="departureDate" type="date"
+                  class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cities & Family -->
+        <div class="p-6 md:p-8">
+          <h2 class="font-headline text-lg font-bold text-primary mb-1">ערים ומשפחה</h2>
+          <p class="text-sm text-on-surface-variant mb-5">בחרו ערים מהרשימה. גילאי הילדים הם אופציונליים.</p>
+
+          <!-- Row 1: Cities picker (full width) -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-on-surface-variant mb-2">ערים</label>
+            <div class="city-picker relative" id="city-picker">
+              <div class="flex flex-wrap gap-1.5 min-h-[48px] bg-surface-container-highest rounded-xl px-3 py-2 cursor-text field-input border-none" id="city-tags">
+                <input class="flex-1 min-w-[120px] bg-transparent border-none focus:ring-0 focus:outline-none py-1 px-1 text-sm" id="city-search" type="text" placeholder="הקלידו שם יישוב..." autocomplete="off">
+              </div>
+              <div class="city-dropdown absolute top-full left-0 right-0 mt-2 bg-surface-container-lowest rounded-xl ambient-shadow border border-outline-variant/10 max-h-[260px] overflow-y-auto z-20" id="city-dropdown"></div>
+            </div>
+          </div>
+
+          <!-- Row 2: Income, rooms, children count -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent1-income">הכנסת הורה 1</label>
+              <input id="parent1-income" name="parent1Income" type="number" min="0" step="1" value="18000"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent2-income">הכנסת הורה 2</label>
+              <input id="parent2-income" name="parent2Income" type="number" min="0" step="1" value="14000"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="desired-rooms">מספר חדרים</label>
+              <select id="desired-rooms" name="desiredRooms"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+                <option value="3">3 חדרים</option>
+                <option value="4" selected>4 חדרים</option>
+                <option value="5">5 חדרים</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="children-count">מספר ילדים</label>
+              <input id="children-count" type="number" min="0" max="15" step="1" value="2"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Row 3: Dynamic children age fields -->
+          <div id="children-ages-container" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- Parent 1 Commute -->
+        <div class="p-6 md:p-8 bg-surface-container-low/40">
+          <h2 class="font-headline text-lg font-bold text-primary mb-1">נסיעה לעבודה – הורה 1</h2>
+          <p class="text-sm text-on-surface-variant mb-5">חישוב עלות ומרחק נסיעה למקום העבודה עבור הורה 1.</p>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="md:col-span-6">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent1-address">כתובת עבודה</label>
+              <input id="parent1-address" name="parent1Address" type="text" value="דרך מנחם בגין 132, תל אביב" required
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent1-mode">אמצעי תחבורה</label>
+              <select id="parent1-mode" name="parent1Mode"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+                <option value="private_car">רכב פרטי</option>
+                <option value="electric_car">רכב חשמלי</option>
+                <option value="work_car">רכב מהעבודה</option>
+                <option value="public_transport">תחבורה ציבורית</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent1-time">שעת יציאה</label>
+              <input id="parent1-time" name="parent1Time" type="time" value="08:30"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent1-days">ימים בשבוע</label>
+              <input id="parent1-days" name="parent1Days" type="number" min="1" max="7" step="1" value="5"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Parent 2 Commute -->
+        <div class="p-6 md:p-8">
+          <h2 class="font-headline text-lg font-bold text-primary mb-1">נסיעה לעבודה – הורה 2</h2>
+          <p class="text-sm text-on-surface-variant mb-5">חישוב עלות ומרחק נסיעה למקום העבודה עבור הורה 2.</p>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="md:col-span-6">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent2-address">כתובת עבודה</label>
+              <input id="parent2-address" name="parent2Address" type="text" value="דרך מנחם בגין 132, תל אביב"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent2-mode">אמצעי תחבורה</label>
+              <select id="parent2-mode" name="parent2Mode"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+                <option value="private_car">רכב פרטי</option>
+                <option value="electric_car">רכב חשמלי</option>
+                <option value="work_car">רכב מהעבודה</option>
+                <option value="public_transport">תחבורה ציבורית</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent2-time">שעת יציאה</label>
+              <input id="parent2-time" name="parent2Time" type="time" value="08:30"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="parent2-days">ימים בשבוע</label>
+              <input id="parent2-days" name="parent2Days" type="number" min="1" max="7" step="1" value="5"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-3 italic">* השאירו את כתובת העבודה ריקה אם רק הורה אחד עובד.</p>
+        </div>
+
+        <!-- Submit -->
+        <div class="p-6 md:p-8 bg-surface-container-low/40 flex flex-wrap items-center gap-4">
+          <button id="submit-button" type="submit"
+            class="hero-gradient text-on-primary px-8 py-3 rounded-xl font-bold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait flex items-center gap-2">
+            <span class="material-symbols-outlined text-xl">compare_arrows</span>
+            השוואת ערים
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ── Overview ── -->
+<section class="container mx-auto px-4 md:px-6 max-w-5xl">
+  <div id="overview" class="rounded-2xl p-6 mb-6 gap-4 bg-surface-container-lowest ambient-shadow"></div>
+</section>
+
+<!-- ── Results ── -->
+<section class="container mx-auto px-4 md:px-6 max-w-5xl pb-16" id="results"></section>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer class="w-full py-10 px-6 flex flex-col md:flex-row-reverse justify-between items-center gap-4 bg-surface-container-low border-t border-outline-variant/10 text-sm">
+  <div class="flex flex-col gap-1 text-right">
+    <span class="text-lg font-bold text-primary font-headline">FamilyProject</span>
+    <p class="text-on-surface-variant">© 2024 FamilyProject – נתונים מבוססים על הלמ״ס ומקורות ממשלתיים</p>
+  </div>
+  <div class="flex flex-row-reverse gap-6 text-on-surface-variant">
+    <a class="hover:text-primary transition-colors" href="#">מקורות מידע</a>
+    <a class="hover:text-primary transition-colors" href="#">מדיניות פרטיות</a>
+    <a class="hover:text-primary transition-colors" href="#">תנאי שימוש</a>
+  </div>
+</footer>
+
+<script>
+  const form = document.getElementById("compare-form");
+  const overview = document.getElementById("overview");
+  const results = document.getElementById("results");
+  const submitButton = document.getElementById("submit-button");
+  const childrenCountInput = document.getElementById("children-count");
+  const childrenAgesContainer = document.getElementById("children-ages-container");
+  const comparisonCategoryState = {};
+  let latestComparisonResults = [];
+  let latestComparisonHasParent2 = true;
+
+  /* ── Connection toggle ── */
+  document.getElementById("toggle-connection").addEventListener("click", () => {
+    const fields = document.getElementById("connection-fields");
+    const icon = document.getElementById("toggle-connection-icon");
+    fields.classList.toggle("hidden");
+    icon.textContent = fields.classList.contains("hidden") ? "expand_more" : "expand_less";
+  });
+
+  const EMPTY_TEXT = "אין נתונים";
+
+  const CITY_ICON_NAME = "location_city";
+
+  const MODE_LABELS = {
+    private_car: "רכב פרטי",
+    electric_car: "רכב חשמלי",
+    work_car: "רכב מהעבודה",
+    public_transport: "תחבורה ציבורית"
+  };
+
+  /* ── City autocomplete ── */
+  const citySearch = document.getElementById("city-search");
+  const cityTags = document.getElementById("city-tags");
+  const cityDropdown = document.getElementById("city-dropdown");
+  const selectedCities = [];
+  let activeOptionIdx = -1;
+  let searchTimeout = null;
+  let latestSearchToken = 0;
+  let currentSuggestions = [];
+
+  function getApiBase() {
+    return document.getElementById("api-base").value.trim().replace(/\/+$/, "");
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function closeDropdown() {
+    currentSuggestions = [];
+    activeOptionIdx = -1;
+    cityDropdown.classList.remove("open");
+    cityDropdown.innerHTML = "";
+  }
+
+  function clearPendingCityInput() {
+    latestSearchToken += 1;
+    citySearch.value = "";
+    closeDropdown();
+  }
+
+  function isSelectedCity(item) {
+    return selectedCities.some((city) => city.id === item.id);
+  }
+
+  function renderCityTags() {
+    cityTags.querySelectorAll(".city-tag").forEach((el) => el.remove());
+    selectedCities.forEach((city, i) => {
+      const tag = document.createElement("span");
+      tag.className = "city-tag inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container rounded-full px-3 py-1 text-sm font-semibold whitespace-nowrap";
+
+      const text = document.createElement("span");
+      text.textContent = city.name;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.idx = String(i);
+      button.setAttribute("aria-label", `הסרת ${city.name}`);
+      button.textContent = "×";
+      button.className = "mr-1 opacity-60 hover:opacity-100 cursor-pointer text-base leading-none bg-transparent border-none p-0 shadow-none text-on-secondary-container";
+
+      tag.append(text, button);
+      cityTags.insertBefore(tag, citySearch);
+    });
+  }
+
+  function highlightMatch(name, query) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return escapeHtml(name);
+    const lowerName = name.toLowerCase();
+    const lowerQuery = trimmedQuery.toLowerCase();
+    const matchIndex = lowerName.indexOf(lowerQuery);
+    if (matchIndex < 0) return escapeHtml(name);
+    const before = escapeHtml(name.slice(0, matchIndex));
+    const match = escapeHtml(name.slice(matchIndex, matchIndex + trimmedQuery.length));
+    const after = escapeHtml(name.slice(matchIndex + trimmedQuery.length));
+    return `${before}<mark class="bg-secondary-container/50 text-inherit rounded px-0.5">${match}</mark>${after}`;
+  }
+
+  function setActiveOption(nextIndex) {
+    const options = cityDropdown.querySelectorAll(".city-option");
+    activeOptionIdx = nextIndex;
+    options.forEach((option, index) => {
+      option.classList.toggle("bg-surface-container-low", index === activeOptionIdx);
+    });
+  }
+
+  function showDropdown(items, query) {
+    currentSuggestions = items;
+    if (!items.length) { closeDropdown(); return; }
+
+    cityDropdown.innerHTML = items
+      .map((item, index) => {
+        const population = item.population ? Number(item.population).toLocaleString("he-IL") : "";
+        return `<div class="city-option p-4 cursor-pointer flex justify-between items-center hover:bg-surface-container-low transition-colors" data-idx="${index}" data-id="${item.id}" data-name="${escapeHtml(item.name)}">
+          <span class="text-sm text-on-surface-variant">${population ? population + ' תושבים' : ''}</span>
+          <span class="font-bold text-on-surface">${highlightMatch(item.name, query)}</span>
+        </div>`;
+      })
+      .join("");
+
+    cityDropdown.classList.add("open");
+    setActiveOption(-1);
+  }
+
+  function selectCity(item) {
+    if (!item || isSelectedCity(item)) { clearPendingCityInput(); citySearch.focus(); return; }
+    selectedCities.push({ id: item.id, name: item.name });
+    renderCityTags();
+    clearPendingCityInput();
+    citySearch.focus();
+  }
+
+  function getPreferredCitySuggestion() {
+    if (!currentSuggestions.length) return null;
+    if (activeOptionIdx >= 0 && currentSuggestions[activeOptionIdx]) {
+      return currentSuggestions[activeOptionIdx];
+    }
+    return currentSuggestions[0];
+  }
+
+  cityTags.addEventListener("click", (e) => {
+    if (e.target.tagName === "BUTTON" && e.target.dataset.idx !== undefined) {
+      selectedCities.splice(Number(e.target.dataset.idx), 1);
+      renderCityTags();
+    }
+    citySearch.focus();
+  });
+
+  cityDropdown.addEventListener("mousedown", (e) => {
+    const option = e.target.closest(".city-option");
+    if (!option) return;
+    e.preventDefault();
+  });
+
+  cityDropdown.addEventListener("click", (e) => {
+    const option = e.target.closest(".city-option");
+    if (!option) return;
+    selectCity(currentSuggestions[Number(option.dataset.idx)]);
+  });
+
+  citySearch.addEventListener("input", () => {
+    clearTimeout(searchTimeout);
+    const query = citySearch.value.trim();
+    if (!query) { latestSearchToken += 1; closeDropdown(); return; }
+
+    const searchToken = ++latestSearchToken;
+    searchTimeout = setTimeout(async () => {
+      try {
+        const url = `${getApiBase()}/settlements/search?q=${encodeURIComponent(query)}&limit=15`;
+        const res = await fetch(url);
+        if (!res.ok || searchToken !== latestSearchToken) return;
+        const data = await res.json();
+        if (searchToken !== latestSearchToken) return;
+        showDropdown(data.filter((item) => !isSelectedCity(item)), query);
+      } catch (_) {
+        if (searchToken === latestSearchToken) closeDropdown();
+      }
+    }, 200);
+  });
+
+  citySearch.addEventListener("keydown", (e) => {
+    const hasOptions = currentSuggestions.length > 0;
+    if (e.key === "ArrowDown") { if (!hasOptions) return; e.preventDefault(); setActiveOption(Math.min(activeOptionIdx + 1, currentSuggestions.length - 1)); }
+    else if (e.key === "ArrowUp") { if (!hasOptions) return; e.preventDefault(); setActiveOption(Math.max(activeOptionIdx - 1, 0)); }
+    else if (e.key === "Enter") {
+      if (!hasOptions) return;
+      e.preventDefault();
+      const preferredSuggestion = getPreferredCitySuggestion();
+      if (preferredSuggestion) selectCity(preferredSuggestion);
+    }
+    else if (e.key === "Escape") { clearPendingCityInput(); }
+    else if (e.key === "Backspace" && !citySearch.value && selectedCities.length) { selectedCities.pop(); renderCityTags(); }
+  });
+
+  citySearch.addEventListener("blur", () => {
+    window.setTimeout(() => { if (!document.activeElement.closest("#city-picker")) clearPendingCityInput(); }, 120);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#city-picker")) clearPendingCityInput();
+  });
+
+  /* ── Dynamic children age fields ── */
+  function renderChildrenFields() {
+    const count = Math.max(0, Math.min(15, parseInt(childrenCountInput.value) || 0));
+    const currentValues = [];
+    childrenAgesContainer.querySelectorAll("input[data-child-age]").forEach((input) => {
+      currentValues.push(input.value);
+    });
+
+    childrenAgesContainer.innerHTML = "";
+    for (let i = 0; i < count; i++) {
+      const wrapper = document.createElement("div");
+      const label = document.createElement("label");
+      label.className = "block text-sm font-semibold text-on-surface-variant mb-2";
+      label.textContent = `גיל ילד ${i + 1}`;
+      label.setAttribute("for", `child-age-${i}`);
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.id = `child-age-${i}`;
+      input.min = "0";
+      input.max = "18";
+      input.step = "1";
+      input.setAttribute("data-child-age", "true");
+      input.className = "field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none";
+      input.placeholder = "גיל";
+      if (i < currentValues.length && currentValues[i] !== "") {
+        input.value = currentValues[i];
+      }
+
+      wrapper.append(label, input);
+      childrenAgesContainer.appendChild(wrapper);
+    }
+  }
+
+  function parseChildren() {
+    const inputs = childrenAgesContainer.querySelectorAll("input[data-child-age]");
+    const children = [];
+    inputs.forEach((input) => {
+      const age = Number(input.value);
+      if (Number.isFinite(age) && age >= 0) {
+        children.push({ age });
+      }
+    });
+    return children;
+  }
+
+  childrenCountInput.addEventListener("input", renderChildrenFields);
+
+  function formatValue(value, suffix = "") {
+    if (value === null || value === undefined || value === "") return EMPTY_TEXT;
+    if (typeof value === "number") return `${value.toLocaleString("he-IL")}${suffix}`;
+    return `${value}${suffix}`;
+  }
+
+  function formatCurrency(value) {
+    if (value === null || value === undefined) return EMPTY_TEXT;
+    return `₪${Number(value).toLocaleString("he-IL", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  }
+
+  function formatPercent(value) {
+    if (value === null || value === undefined) return EMPTY_TEXT;
+    return `${(Number(value) * 100).toLocaleString("he-IL", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
+  }
+
+  function formatTwoDecimals(value) {
+    if (value === null || value === undefined || value === "") return EMPTY_TEXT;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return EMPTY_TEXT;
+    return num.toLocaleString("he-IL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatTaxCurrency(value) {
+    if (value === null || value === undefined || value === 0) return "אין הטבת מס";
+    return formatCurrency(value);
+  }
+
+  function formatTaxPercent(value) {
+    if (value === null || value === undefined || value === 0) return "אין הטבת מס";
+    return formatPercent(value);
+  }
+
+  function renderRank(rankData) {
+    if (!rankData) return EMPTY_TEXT;
+    if (rankData.display_place != null && rankData.out_of != null) {
+      return `<div class="rank-display-block">
+        <span class="rank-display-caption">מקום</span>
+        <span class="rank-display-value">${formatValue(rankData.display_place)}</span>
+        <span class="rank-display-subcaption">מתוך ${formatValue(rankData.out_of)}</span>
+      </div>`;
+    }
+
+    if (rankData.value != null && rankData.out_of != null) {
+      return `<div class="rank-display-block">
+        <span class="rank-display-caption">אשכול</span>
+        <span class="rank-display-value">${formatValue(rankData.value)}</span>
+        <span class="rank-display-subcaption">מתוך ${formatValue(rankData.out_of)}</span>
+      </div>`;
+    }
+
+    return formatValue(rankData.value ?? rankData.display_place);
+  }
+
+  /* ── Comparison table rendering ── */
+
+  function getTotalMonthlyComparisonValue(result) {
+    const costs = result.costs || {};
+    const taxes = result.taxes || {};
+    const raw = costs.total_monthly;
+    return raw != null ? raw - (taxes.tax_benefit_monthly || 0) : null;
+  }
+
+  function getCommuteGreenCriteria(commuteKey) {
+    const getCommute = (r) => (r.transport || {})[commuteKey];
+    return [
+      { getter: (r) => getCommute(r)?.duration_min, mode: "low" },
+      { getter: (r) => getCommute(r)?.distance_km, mode: "low" },
+      { getter: (r) => getCommute(r)?.monthly_cost, mode: "low" },
+    ];
+  }
+
+  function getComparisonGreenCriteria(hasParent2 = true) {
+    const criteria = [
+      { getter: getTotalMonthlyComparisonValue, mode: "low" },
+      ...getCommuteGreenCriteria("parent1_work_commute"),
+      { getter: (r) => (r.costs || {}).commute_monthly, mode: "low" },
+      { getter: (r) => (r.costs || {}).rent_monthly, mode: "low" },
+      { getter: (r) => (r.costs || {}).arnona_monthly, mode: "low" },
+      { getter: (r) => (r.costs || {}).education_monthly, mode: "low" },
+      { getter: (r) => (r.taxes || {}).tax_benefit_percent, mode: "high", options: TAX_BENEFIT_HIGHLIGHT_RULE },
+      { getter: (r) => (r.taxes || {}).tax_benefit_annual, mode: "high", options: TAX_BENEFIT_HIGHLIGHT_RULE },
+      { getter: (r) => (r.taxes || {}).tax_benefit_monthly, mode: "high", options: TAX_BENEFIT_HIGHLIGHT_RULE },
+      { getter: (r) => (r.education || {}).schools_total, mode: "high" },
+      { getter: (r) => (r.education || {}).schools_elementary, mode: "high" },
+      { getter: (r) => (r.education || {}).schools_middle_schools, mode: "high" },
+      { getter: (r) => (r.education || {}).schools_high_schools, mode: "high" },
+      { getter: (r) => (r.education || {}).dropout_rate_total, mode: "low" },
+      { getter: (r) => (r.education || {}).bagrut_eligibility_rate, mode: "high" },
+      { getter: (r) => (r.safety || {}).crime_index, mode: "low", options: CRIME_INDEX_RULE },
+      { getter: (r) => (r.safety || {}).cluster_1_per_1000, mode: "low" },
+      { getter: (r) => (r.safety || {}).cluster_2_per_1000, mode: "low" },
+      { getter: (r) => (r.safety || {}).cluster_3_per_1000, mode: "low" },
+      { getter: (r) => (r.quality_of_life || {}).potential_accessibility_rank, mode: "low", options: RANK_DISPLAY_PLACE_RULE },
+      { getter: (r) => (r.quality_of_life || {}).peripherality_rank_2020, mode: "low", options: RANK_DISPLAY_PLACE_RULE },
+      { getter: (r) => (r.quality_of_life || {}).social_economic_cluster_2021, mode: "high", options: RANK_VALUE_RULE },
+      { getter: (r) => (r.quality_of_life || {}).average_cars_per_household, mode: "low" },
+    ];
+
+    if (hasParent2) {
+      criteria.splice(4, 0, ...getCommuteGreenCriteria("parent2_work_commute"));
+    }
+
+    return criteria;
+  }
+
+  const TAX_BENEFIT_HIGHLIGHT_RULE = {
+    suppressHighlight: (allResults, getter) => allResults.every((result) => isNoTaxBenefitValue(getter(result))),
+  };
+
+  function getRankComparisonNumber(rankData, key) {
+    if (!rankData || typeof rankData !== "object") return null;
+    const numericValue = Number(rankData[key]);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+
+  const RANK_DISPLAY_PLACE_RULE = {
+    valueSelector: (rankData) => getRankComparisonNumber(rankData, "display_place"),
+  };
+
+  const RANK_VALUE_RULE = {
+    valueSelector: (rankData) => getRankComparisonNumber(rankData, "value"),
+  };
+
+  const CRIME_INDEX_RULE = {
+    valueSelector: (value) => {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue) || numericValue === 0) {
+        return null;
+      }
+      return numericValue;
+    },
+  };
+
+  function formatCrimeIndex(value) {
+    const comparableValue = CRIME_INDEX_RULE.valueSelector(value);
+    if (comparableValue === null) {
+      return "אין נתונים";
+    }
+    return formatValue(comparableValue);
+  }
+
+  function shouldEmphasizeDisplayValue(rawValue, formattedValue = "") {
+    if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
+      return true;
+    }
+
+    if (rawValue && typeof rawValue === "object") {
+      return ["display_place", "value", "out_of"].some((key) => Number.isFinite(Number(rawValue[key])));
+    }
+
+    return /\d/.test(String(formattedValue).replace(/<[^>]+>/g, ""));
+  }
+
+  function renderComparisonValue(rawValue, formattedValue, isWinner = false) {
+    const emphasizeNumeric = shouldEmphasizeDisplayValue(rawValue, formattedValue);
+    const valueClasses = `comparison-value${emphasizeNumeric ? " numeric-value" : ""}`;
+    if (isWinner) {
+      return `<span class="${valueClasses} text-xl font-black" style="color:#002204">${formattedValue}</span>`;
+    }
+    return `<span class="${valueClasses}">${formattedValue}</span>`;
+  }
+
+  function renderSectionGrid(categoryId, title, allResults, rows, mergedColumns = [], mergedMessage = EMPTY_TEXT) {
+    const rowCount = rows.length;
+    const rowTemplate = `repeat(${rowCount}, minmax(0, auto))`;
+    const mergedColumnSet = new Set(
+      mergedColumns
+        .map((isMerged, index) => (isMerged ? index : -1))
+        .filter((index) => index >= 0)
+    );
+
+    const labelCells = rows.map((row, rowIndex) => `
+      <div class="section-grid-label sticky-label-cell" style="grid-column: 1; grid-row: ${rowIndex + 1};">
+        ${row.label}
+      </div>
+    `).join("");
+
+    const valueCells = allResults.map((result, cityIndex) => {
+      const columnIndex = cityIndex + 2;
+
+      if (mergedColumnSet.has(cityIndex)) {
+        return `
+          <div class="section-grid-merged" style="grid-column: ${columnIndex}; grid-row: 1 / span ${rowCount};">
+            ${renderComparisonValue(mergedMessage, mergedMessage, false)}
+          </div>
+        `;
+      }
+
+      return rows.map((row, rowIndex) => {
+        const value = row.getter(result);
+        const formatted = row.formatter ? row.formatter(value) : formatValue(value);
+        const bestIndexes = row.bestMode ? getBestIndexes(allResults, row.getter, row.bestMode, row.bestOptions || {}) : [];
+        const isWinner = bestIndexes.includes(cityIndex);
+        return `
+          <div class="section-grid-cell comparison-row-cell comparison-value-cell ${isWinner ? 'winner-cell' : ''}" style="grid-column: ${columnIndex}; grid-row: ${rowIndex + 1};">
+            ${renderComparisonValue(value, formatted, isWinner)}
+          </div>
+        `;
+      }).join("");
+    }).join("");
+
+    return renderCategorySection(categoryId, title, `
+      <div class="section-grid-row" style="grid-template-columns: 1fr ${'1fr '.repeat(allResults.length)}; grid-template-rows: ${rowTemplate};">
+        ${labelCells}
+        ${valueCells}
+      </div>
+    `);
+  }
+
+  function getSharedFormattedValue(allResults, getter, formatter) {
+    const comparableValues = allResults
+      .map((result) => getter(result))
+      .filter((value) => !isMissingComparisonValue(value));
+
+    if (!comparableValues.length) {
+      return EMPTY_TEXT;
+    }
+
+    const normalizedValues = comparableValues.map((value) => JSON.stringify(value));
+    if (new Set(normalizedValues).size !== 1) {
+      return null;
+    }
+
+    const sharedValue = comparableValues[0];
+    return formatter ? formatter(sharedValue) : formatValue(sharedValue);
+  }
+
+  function hasTaxBenefit(result) {
+    const taxes = result.taxes || {};
+    return ![
+      taxes.tax_benefit_percent,
+      taxes.tax_benefit_annual,
+      taxes.tax_benefit_monthly,
+    ].every((value) => isNoTaxBenefitValue(value));
+  }
+
+  function renderTaxSection(allResults) {
+    const hasAnyTaxBenefit = allResults.some((result) => hasTaxBenefit(result));
+    const sharedFamilyIncomeDisplay = getSharedFormattedValue(
+      allResults,
+      (r) => (r.taxes || {}).total_family_income_monthly,
+      formatCurrency
+    );
+
+    if (!hasAnyTaxBenefit) {
+      return renderCategorySection(
+        "taxes",
+        "מיסים",
+        `<div class="tax-note">אין הטבת מס לאף אחת מהערים שנבחרו</div>`
+      );
+    }
+
+    const taxRows = [
+      {
+        label: "תקרת מס",
+        getter: (r) => (r.taxes || {}).tax_ceiling_annual,
+        formatter: formatTaxCurrency,
+        bestMode: null,
+      },
+      {
+        label: "אחוז הטבה",
+        getter: (r) => (r.taxes || {}).tax_benefit_percent,
+        formatter: formatTaxPercent,
+        bestMode: "high",
+        bestOptions: TAX_BENEFIT_HIGHLIGHT_RULE,
+      },
+      {
+        label: "הטבה שנתית",
+        getter: (r) => (r.taxes || {}).tax_benefit_annual,
+        formatter: formatTaxCurrency,
+        bestMode: "high",
+        bestOptions: TAX_BENEFIT_HIGHLIGHT_RULE,
+      },
+      {
+        label: "הטבה חודשית",
+        getter: (r) => (r.taxes || {}).tax_benefit_monthly,
+        formatter: formatTaxCurrency,
+        bestMode: "high",
+        bestOptions: TAX_BENEFIT_HIGHLIGHT_RULE,
+      },
+    ];
+
+    const bestIndexesByRow = taxRows.map((row) => new Set(
+      row.bestMode ? getBestIndexes(allResults, row.getter, row.bestMode, row.bestOptions || {}) : []
+    ));
+    const noBenefitColumns = allResults.map((result) => !hasTaxBenefit(result));
+    const rowCount = taxRows.length;
+    const rowTemplate = `repeat(${rowCount}, minmax(0, auto))`;
+
+    const labelCells = taxRows.map((row, rowIndex) => `
+      <div class="tax-grid-label sticky-label-cell" style="grid-column: 1; grid-row: ${rowIndex + 1};">
+        ${row.label}
+      </div>
+    `).join("");
+
+    const valueCells = allResults.map((result, cityIndex) => {
+      const columnIndex = cityIndex + 2;
+
+      if (noBenefitColumns[cityIndex]) {
+        return `
+          <div class="tax-grid-merged" style="grid-column: ${columnIndex}; grid-row: 1 / span ${rowCount};">
+            ${renderComparisonValue("אין הטבת מס", "אין הטבת מס", false)}
+          </div>
+        `;
+      }
+
+      return taxRows.map((row, rowIndex) => {
+        const value = row.getter(result);
+        const formatted = row.formatter ? row.formatter(value) : formatValue(value);
+        const isWinner = bestIndexesByRow[rowIndex].has(cityIndex);
+        return `
+          <div class="tax-grid-cell comparison-row-cell comparison-value-cell ${isWinner ? 'winner-cell' : ''}" style="grid-column: ${columnIndex}; grid-row: ${rowIndex + 1};">
+            ${renderComparisonValue(value, formatted, isWinner)}
+          </div>
+        `;
+      }).join("");
+    }).join("");
+
+    return renderCategorySection("taxes", "מיסים", `
+      ${sharedFamilyIncomeDisplay !== null
+        ? renderMergedValueRow("הכנסה משפחתית", allResults, sharedFamilyIncomeDisplay, (allResults[0].taxes || {}).total_family_income_monthly)
+        : tableRow("הכנסה משפחתית", allResults, (r) => (r.taxes || {}).total_family_income_monthly, formatCurrency, null)}
+      <div class="tax-grid-row" style="grid-template-columns: 1fr ${'1fr '.repeat(allResults.length)}; grid-template-rows: ${rowTemplate};">
+        ${labelCells}
+        ${valueCells}
+      </div>
+    `);
+  }
+
+  function rankResultsByGreenFields(allResults, hasParent2 = true) {
+    const scoredResults = allResults.map((result, originalIndex) => ({
+      ...result,
+      _greenWins: 0,
+      _originalComparisonIndex: originalIndex,
+    }));
+
+    getComparisonGreenCriteria(hasParent2).forEach(({ getter, mode, options }) => {
+      getBestIndexes(scoredResults, getter, mode, options).forEach((bestIndex) => {
+        scoredResults[bestIndex]._greenWins += 1;
+      });
+    });
+
+    scoredResults.sort((left, right) => (
+      right._greenWins - left._greenWins
+      || left._originalComparisonIndex - right._originalComparisonIndex
+    ));
+
+    return scoredResults.map((result, sortedIndex) => ({
+      ...result,
+      _rankPosition: sortedIndex + 1,
+    }));
+  }
+
+  function renderCityMedal(rankPosition) {
+    if (!rankPosition || rankPosition > 3) return "";
+    const medalByRank = {
+      1: "🥇",
+      2: "🥈",
+      3: "🥉",
+    };
+    const medal = medalByRank[rankPosition];
+    if (!medal) return "";
+    return `<span class="city-medal" aria-label="דירוג ${rankPosition}">${medal}</span>`;
+  }
+
+  function isCategoryExpanded(categoryId) {
+    if (!(categoryId in comparisonCategoryState)) {
+      comparisonCategoryState[categoryId] = categoryId === "commute_parent1";
+    }
+    return comparisonCategoryState[categoryId];
+  }
+
+  function resetComparisonCategoryState() {
+    Object.keys(comparisonCategoryState).forEach((categoryId) => {
+      delete comparisonCategoryState[categoryId];
+    });
+  }
+
+  function renderCategorySection(categoryId, title, content) {
+    const expanded = isCategoryExpanded(categoryId);
+    const arrowClass = expanded ? "expanded" : "collapsed";
+    return `<section class="category-section">
+      <button type="button" class="category-header" data-category-id="${categoryId}" aria-expanded="${expanded}">
+        <span class="material-symbols-outlined category-arrow ${arrowClass}">expand_more</span>
+        <span class="category-title">${title}</span>
+      </button>
+      ${expanded ? content : ""}
+    </section>`;
+  }
+
+  function isNoTaxBenefitValue(value) {
+    if (value === null || value === undefined) return true;
+    if (typeof value === "string") {
+      const normalized = value.trim();
+      return normalized === "" || normalized === "אין הטבת מס";
+    }
+
+    const num = Number(value);
+    return Number.isFinite(num) ? num <= 0 : false;
+  }
+
+  function isMissingComparisonValue(value) {
+    if (value === null || value === undefined) return true;
+    if (typeof value === "string") {
+      const normalized = value.trim();
+      return normalized === "" || normalized === EMPTY_TEXT;
+    }
+    return false;
+  }
+
+  function getBestIndexes(allResults, getter, mode = "low", options = {}) {
+    if (options.suppressHighlight && options.suppressHighlight(allResults, getter)) {
+      return [];
+    }
+
+    const candidates = allResults
+      .map((result, index) => {
+        const rawValue = getter(result);
+        const comparisonValue = options.valueSelector ? options.valueSelector(rawValue) : rawValue;
+        if (isMissingComparisonValue(comparisonValue)) {
+          return null;
+        }
+        const numericValue = Number(comparisonValue);
+        if (!Number.isFinite(numericValue)) {
+          return null;
+        }
+
+        return {
+          index,
+          value: numericValue,
+        };
+      })
+      .filter(Boolean);
+
+    if (!candidates.length) {
+      return [];
+    }
+
+    const bestValue = candidates.reduce((currentBest, candidate) => {
+      if (currentBest === null) return candidate.value;
+      return mode === "low"
+        ? Math.min(currentBest, candidate.value)
+        : Math.max(currentBest, candidate.value);
+    }, null);
+
+    return candidates
+      .filter((candidate) => candidate.value === bestValue)
+      .map((candidate) => candidate.index);
+  }
+
+  function findBestIndex(allResults, getter, mode = "low", options = {}) {
+    const bestIndexes = getBestIndexes(allResults, getter, mode, options);
+    return bestIndexes.length ? bestIndexes[0] : -1;
+  }
+
+  function tableRow(label, allResults, getter, formatter, bestMode, bestOptions = {}) {
+    const bestIndexes = bestMode ? getBestIndexes(allResults, getter, bestMode, bestOptions) : [];
+    const bestIndexSet = new Set(bestIndexes);
+    const cells = allResults.map((r, i) => {
+      const v = getter(r);
+      const formatted = formatter ? formatter(v) : formatValue(v);
+      const isWinner = bestIndexSet.has(i);
+      return `<div class="p-5 comparison-row-cell comparison-value-cell ${isWinner ? 'winner-cell' : ''}">
+        ${renderComparisonValue(v, formatted, isWinner)}
+      </div>`;
+    }).join("");
+    return `<div class="grid zebra-row transition-colors" style="grid-template-columns: 1fr ${'1fr '.repeat(allResults.length)}">
+      <div class="p-5 text-right sticky-label-cell comparison-row-cell comparison-label-cell">${label}</div>
+      ${cells}
+    </div>`;
+  }
+
+  function renderMergedValueRow(label, allResults, displayValue, rawValue = null) {
+    return `<div class="merged-value-row" style="grid-template-columns: 1fr ${'1fr '.repeat(allResults.length)}">
+      <div class="merged-value-label sticky-label-cell comparison-row-cell comparison-label-cell">${label}</div>
+      <div class="merged-value-content comparison-row-cell comparison-value-cell" style="grid-column: 2 / span ${allResults.length};">
+        ${renderComparisonValue(rawValue, displayValue, false)}
+      </div>
+    </div>`;
+  }
+
+  function renderCommuteSection(categoryId, title, allResults, commuteKey) {
+    const getCommute = (r) => (r.transport || {})[commuteKey];
+    const commuteModes = allResults.map((r) => {
+      const mode = getCommute(r)?.mode;
+      return MODE_LABELS[mode] || mode;
+    });
+    const normalizedModes = commuteModes.filter((mode) => !isMissingComparisonValue(mode));
+    const hasSingleSharedMode = normalizedModes.length === allResults.length
+      && new Set(normalizedModes).size === 1;
+
+    const rows = [
+      hasSingleSharedMode
+        ? renderMergedValueRow("אמצעי תחבורה", allResults, normalizedModes[0], normalizedModes[0])
+        : tableRow("אמצעי תחבורה", allResults, (r) => { const m = getCommute(r)?.mode; return MODE_LABELS[m] || m; }, formatValue, null),
+      tableRow("זמן נסיעה (דק׳)", allResults, (r) => getCommute(r)?.duration_min, (v) => v != null ? formatValue(v, " דק׳") : EMPTY_TEXT, "low"),
+      tableRow("מרחק (ק״מ)", allResults, (r) => getCommute(r)?.distance_km, (v) => v != null ? formatValue(v, " ק״מ") : EMPTY_TEXT, "low"),
+      tableRow("עלות חודשית", allResults, (r) => getCommute(r)?.monthly_cost, formatCurrency, "low"),
+    ];
+    return renderCategorySection(categoryId, title, rows.join(""));
+  }
+
+  function renderComparisonTable(allResults, hasParent2 = true) {
+    if (!allResults.length) { results.innerHTML = ""; return; }
+    latestComparisonResults = allResults;
+    latestComparisonHasParent2 = hasParent2;
+
+    // City header
+    const cityColors = ["primary", "secondary", "primary-container", "primary", "secondary", "primary-container"];
+
+    const header = `<div class="grid sticky-city-header-row" style="grid-template-columns: 1fr ${'1fr '.repeat(allResults.length)}">
+      <div class="p-6 text-right font-headline font-bold text-on-surface-variant text-sm tracking-wider sticky-city-header-cell">מדד השוואתי</div>
+      ${allResults.map((r, i) => `<div class="p-6 text-center flex flex-col items-center gap-3 sticky-city-header-cell">
+        <div class="w-14 h-14 rounded-2xl bg-${cityColors[i % cityColors.length]}/10 flex items-center justify-center text-${cityColors[i % cityColors.length]}">
+          <span class="material-symbols-outlined text-2xl">${CITY_ICON_NAME}</span>
+        </div>
+        <div class="flex items-center justify-center gap-2 flex-row-reverse text-center">
+          ${renderCityMedal(r._rankPosition)}
+          <span class="text-lg font-black text-primary">${r.city}</span>
+        </div>
+      </div>`).join("")}
+    </div>`;
+
+    // Total monthly cost row
+    const totalRow = (() => {
+      const bestIndexes = getBestIndexes(allResults, getTotalMonthlyComparisonValue, "low");
+      const bestIndexSet = new Set(bestIndexes);
+
+      const cells = allResults.map((r, i) => {
+        const taxes = r.taxes || {};
+        const adjusted = getTotalMonthlyComparisonValue(r);
+        const fmt = adjusted != null ? "₪" + Number(adjusted).toLocaleString("he-IL", { maximumFractionDigits: 0 }) : EMPTY_TEXT;
+        const taxNote = (taxes.tax_benefit_monthly || 0) > 0 ? `<div class="text-xs mt-1 opacity-70">כולל הטבת מס ${formatCurrency(taxes.tax_benefit_monthly)}</div>` : "";
+        const isWinner = bestIndexSet.has(i);
+        return `<div class="p-5 comparison-row-cell comparison-value-cell ${isWinner ? 'winner-cell' : ''}">
+          <span class="comparison-value numeric-value text-2xl font-black ${isWinner ? '' : 'text-on-surface'}" style="${isWinner ? 'color:#002204' : ''}">${fmt}</span>
+          ${taxNote}
+        </div>`;
+      }).join("");
+
+      return `<div class="grid" style="grid-template-columns: 1fr ${'1fr '.repeat(allResults.length)}; background: linear-gradient(135deg, rgba(0,68,113,0.04), rgba(0,105,114,0.04));">
+        <div class="p-5 text-right font-headline text-primary text-lg sticky-label-cell comparison-row-cell comparison-label-cell">עלות חודשית כוללת</div>
+        ${cells}
+      </div>`;
+    })();
+
+    // Cost breakdown
+    const costRows = [
+      tableRow("נסיעה לעבודה", allResults, (r) => (r.costs || {}).commute_monthly, formatCurrency, "low"),
+      tableRow("שכ״ד", allResults, (r) => (r.costs || {}).rent_monthly, formatCurrency, "low"),
+      tableRow("ארנונה", allResults, (r) => (r.costs || {}).arnona_monthly, formatCurrency, "low"),
+      tableRow("חינוך", allResults, (r) => (r.costs || {}).education_monthly, formatCurrency, "low"),
+    ].join("");
+
+    const costSection = renderCategorySection("costs", "פירוט עלויות", costRows);
+
+    const taxSection = renderTaxSection(allResults);
+
+    // Quality of life
+    const qolRows = [
+      tableRow(
+        "נגישות פוטנציאלית",
+        allResults,
+        (r) => (r.quality_of_life || {}).potential_accessibility_rank,
+        (v) => renderRank(v),
+        "low",
+        RANK_DISPLAY_PLACE_RULE
+      ),
+      tableRow(
+        "מרכזיות",
+        allResults,
+        (r) => (r.quality_of_life || {}).peripherality_rank_2020,
+        (v) => renderRank(v),
+        "low",
+        RANK_DISPLAY_PLACE_RULE
+      ),
+      tableRow(
+        "אשכול חברתי-כלכלי",
+        allResults,
+        (r) => (r.quality_of_life || {}).social_economic_cluster_2021,
+        (v) => renderRank(v),
+        "high",
+        RANK_VALUE_RULE
+      ),
+      tableRow("מכוניות למשק בית", allResults, (r) => (r.quality_of_life || {}).average_cars_per_household, formatTwoDecimals, "low"),
+      tableRow("דת", allResults, (r) => (r.quality_of_life || {}).religion, formatValue, null),
+      tableRow("גיל חציוני", allResults, (r) => (r.quality_of_life || {}).age_median, formatValue, null),
+    ].join("");
+
+    const qolSection = renderCategorySection("quality_of_life", "איכות חיים", qolRows);
+
+    // Education
+    const educationRows = [
+      { label: "סה״כ מוסדות", getter: (r) => (r.education || {}).schools_total, formatter: formatValue, bestMode: "high" },
+      { label: "יסודי", getter: (r) => (r.education || {}).schools_elementary, formatter: formatValue, bestMode: "high" },
+      { label: "חטיבת ביניים", getter: (r) => (r.education || {}).schools_middle_schools, formatter: formatValue, bestMode: "high" },
+      { label: "תיכון", getter: (r) => (r.education || {}).schools_high_schools, formatter: formatValue, bestMode: "high" },
+      { label: "שיעור נשירה", getter: (r) => (r.education || {}).dropout_rate_total, formatter: (v) => formatValue(v, "%"), bestMode: "low" },
+      { label: "זכאות בגרות", getter: (r) => (r.education || {}).bagrut_eligibility_rate, formatter: (v) => formatValue(v, "%"), bestMode: "high" },
+    ];
+    const educationMissingColumns = allResults.map((result) => isMissingComparisonValue((result.education || {}).schools_total));
+    const eduSection = renderSectionGrid("education", "חינוך", allResults, educationRows, educationMissingColumns, EMPTY_TEXT);
+
+    // Safety
+    const safetyRows = [
+      { label: "מדד פשיעה", getter: (r) => (r.safety || {}).crime_index, formatter: formatCrimeIndex, bestMode: "low", bestOptions: CRIME_INDEX_RULE },
+      { label: "אשכול 1 / 1,000", getter: (r) => (r.safety || {}).cluster_1_per_1000, formatter: formatValue, bestMode: "low" },
+      { label: "אשכול 2 / 1,000", getter: (r) => (r.safety || {}).cluster_2_per_1000, formatter: formatValue, bestMode: "low" },
+      { label: "אשכול 3 / 1,000", getter: (r) => (r.safety || {}).cluster_3_per_1000, formatter: formatValue, bestMode: "low" },
+    ];
+    const safetyMissingColumns = allResults.map((result) => CRIME_INDEX_RULE.valueSelector((result.safety || {}).crime_index) === null);
+    const safetySection = renderSectionGrid("safety", "ביטחון", allResults, safetyRows, safetyMissingColumns, EMPTY_TEXT);
+
+    // Highlights & Warnings
+    const insightsSection = renderCategorySection("insights", "יתרונות ואזהרות", `<div class="p-6 bg-surface-container-low/30">
+      <div class="grid gap-4" style="grid-template-columns: ${'1fr '.repeat(allResults.length)}">
+        ${allResults.map((r) => {
+          const summary = r.summary || {};
+          const highlights = (summary.highlights || []).map((h) => `<span class="inline-block bg-tertiary-fixed/20 text-on-tertiary-fixed rounded-full px-3 py-1 text-xs font-semibold mb-1">${h}</span>`).join(" ");
+          const warnings = (summary.warnings || []).map((w) => `<span class="inline-block bg-error-container text-on-error-container rounded-full px-3 py-1 text-xs font-semibold mb-1">${w}</span>`).join(" ");
+          return `<div class="text-center">
+            <div class="font-bold text-sm mb-2 text-primary">${r.city}</div>
+            <div class="mb-2">${highlights || `<span class="text-xs text-on-surface-variant">${EMPTY_TEXT}</span>`}</div>
+            <div>${warnings || `<span class="text-xs text-on-surface-variant">אין אזהרות</span>`}</div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>`);
+
+    // Missing categories
+    const missingSection = renderCategorySection("missing_categories", "קטגוריות חסרות", `<div class="p-6">
+      <div class="grid gap-4" style="grid-template-columns: ${'1fr '.repeat(allResults.length)}">
+        ${allResults.map((r) => {
+          const completeness = r.data_completeness || {};
+          const missing = (completeness.missing_categories || []).map((c) => `<span class="inline-block bg-surface-container-high text-on-surface-variant rounded-full px-3 py-1 text-xs font-semibold mb-1">${c}</span>`).join(" ");
+          return `<div class="text-center">
+            <div class="font-bold text-sm mb-2 text-primary">${r.city}</div>
+            <div>${missing || `<span class="inline-block bg-tertiary-fixed/20 text-on-tertiary-fixed rounded-full px-3 py-1 text-xs font-semibold">הכל זמין</span>`}</div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>`);
+
+    const minColWidth = Math.max(600, allResults.length * 200 + 200);
+
+    results.innerHTML = `
+      <div class="bg-surface-container-lowest rounded-3xl ambient-shadow overflow-visible">
+        <div class="flex flex-col md:flex-row justify-between items-end px-6 pt-6 pb-0 gap-4">
+          <div class="text-right">
+            <h2 class="font-headline text-2xl font-bold text-primary mb-1">השוואת ערים</h2>
+            <p class="text-sm text-on-surface-variant">ניתוח מעמיק של ${allResults.length} ערים נבחרות</p>
+          </div>
+        </div>
+        <div class="sticky-header-wrapper" id="sticky-header-wrapper">
+          <div style="min-width: ${minColWidth}px;">
+            ${header}
+          </div>
+        </div>
+        <div class="comparison-scroll-shell" id="comparison-scroll-shell">
+          <div style="min-width: ${minColWidth}px;">
+            ${totalRow}
+            ${renderCommuteSection("commute_parent1", "נסיעה לעבודה – הורה 1", allResults, "parent1_work_commute")}
+            ${hasParent2 ? renderCommuteSection("commute_parent2", "נסיעה לעבודה – הורה 2", allResults, "parent2_work_commute") : ""}
+            ${costSection}
+            ${taxSection}
+            ${qolSection}
+            ${eduSection}
+            ${safetySection}
+            ${insightsSection}
+            ${missingSection}
+          </div>
+        </div>
+        <div class="p-4 text-center">
+          <p class="text-xs text-on-surface-variant italic">* הנתונים מעודכנים ומתבססים על פרסומי הלמ"ס ומשרדי הממשלה</p>
+        </div>
+      </div>
+    `;
+
+    // Sync horizontal scroll between sticky header and content
+    const stickyHeaderEl = document.getElementById("sticky-header-wrapper");
+    const scrollShellEl = document.getElementById("comparison-scroll-shell");
+    if (stickyHeaderEl && scrollShellEl) {
+      let _syncing = false;
+      scrollShellEl.addEventListener("scroll", () => {
+        if (_syncing) return;
+        _syncing = true;
+        stickyHeaderEl.scrollLeft = scrollShellEl.scrollLeft;
+        _syncing = false;
+      });
+      stickyHeaderEl.addEventListener("scroll", () => {
+        if (_syncing) return;
+        _syncing = true;
+        scrollShellEl.scrollLeft = stickyHeaderEl.scrollLeft;
+        _syncing = false;
+      });
+    }
+  }
+
+  results.addEventListener("click", (event) => {
+    const toggleButton = event.target.closest("[data-category-id]");
+    if (!toggleButton) return;
+
+    const { categoryId } = toggleButton.dataset;
+    if (!categoryId) return;
+
+    comparisonCategoryState[categoryId] = !isCategoryExpanded(categoryId);
+    if (latestComparisonResults.length) {
+      renderComparisonTable(latestComparisonResults, latestComparisonHasParent2);
+    }
+  });
+
+  /* ── Toast notifications (replaces status bar) ── */
+  let toastTimeout = null;
+  const toastEl = document.getElementById("toast");
+
+  function showToast(message, tone = "info") {
+    clearTimeout(toastTimeout);
+    const colors = tone === "error"
+      ? "bg-error-container text-on-error-container"
+      : "bg-secondary-container/80 text-on-secondary-container";
+    toastEl.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-xl px-6 py-3 text-sm font-medium ambient-shadow whitespace-pre-wrap max-w-lg transition-opacity duration-300 ${colors}`;
+    toastEl.textContent = message;
+    toastEl.style.opacity = "1";
+    toastEl.style.pointerEvents = "auto";
+    if (tone !== "error") {
+      toastTimeout = setTimeout(() => { toastEl.style.opacity = "0"; toastEl.style.pointerEvents = "none"; }, 5000);
+    }
+  }
+
+  function hideToast() {
+    clearTimeout(toastTimeout);
+    toastEl.style.opacity = "0";
+    toastEl.style.pointerEvents = "none";
+  }
+
+  function renderOverview(data, orderedResults = []) {
+    overview.className = "rounded-2xl p-6 mb-6 gap-4 bg-surface-container-lowest ambient-shadow visible grid";
+    const family = data.input_summary.family || {};
+    const cities = orderedResults.length
+      ? orderedResults.map((result) => result.city)
+      : (data.input_summary.cities || []);
+    const totalIncome = (family.parent1_income || 0) + (family.parent2_income || 0);
+
+    overview.innerHTML = `
+      <h2 class="font-headline text-lg font-bold text-primary">סיכום הפרטים שהוזנו</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-surface-container-low rounded-2xl p-4">
+          <span class="text-xs text-on-surface-variant font-medium">ערים להשוואה</span>
+          <strong class="block text-base mt-1 text-on-surface">${cities.join(" | ")}</strong>
+        </div>
+        <div class="bg-surface-container-low rounded-2xl p-4">
+          <span class="text-xs text-on-surface-variant font-medium">מספר ילדים</span>
+          <strong class="block text-base mt-1 text-on-surface">${formatValue(family.children_count)}</strong>
+        </div>
+        <div class="bg-surface-container-low rounded-2xl p-4">
+          <span class="text-xs text-on-surface-variant font-medium">חדרים מבוקשים</span>
+          <strong class="block text-base mt-1 text-on-surface">${formatValue(family.desired_rooms)}</strong>
+        </div>
+        <div class="bg-surface-container-low rounded-2xl p-4">
+          <span class="text-xs text-on-surface-variant font-medium">הכנסה משפחתית</span>
+          <strong class="block text-base mt-1 text-on-surface">${formatCurrency(totalIncome)}</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildPayload() {
+    const formData = new FormData(form);
+    const children = parseChildren();
+    const cities = selectedCities.map((city) => city.name);
+    const parent2Address = (formData.get("parent2Address") || "").toString().trim();
+
+    const payload = {
+      cities,
+      family: {
+        parent1_income: Number(formData.get("parent1Income")) || 0,
+        parent2_income: Number(formData.get("parent2Income")) || 0,
+        desired_rooms: Number(formData.get("desiredRooms")) || null,
+        children
+      },
+      parent1: {
+        work_address: (formData.get("parent1Address") || "").toString().trim(),
+        commute_mode: formData.get("parent1Mode"),
+        departure_time: formData.get("parent1Time") || null,
+        work_days_per_week: Number(formData.get("parent1Days")) || 5
+      },
+      departure_date: formData.get("departureDate") || null
+    };
+
+    if (parent2Address) {
+      payload.parent2 = {
+        work_address: parent2Address,
+        commute_mode: formData.get("parent2Mode"),
+        departure_time: formData.get("parent2Time") || null,
+        work_days_per_week: Number(formData.get("parent2Days")) || 5
+      };
+    }
+
+    return payload;
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    hideToast();
+    overview.className = "rounded-2xl p-6 mb-6 gap-4 bg-surface-container-lowest ambient-shadow";
+    overview.innerHTML = "";
+    results.innerHTML = "";
+
+    const apiBase = document.getElementById("api-base").value.trim().replace(/\/+$/, "");
+    const payload = buildPayload();
+
+    if (!payload.cities.length) { showToast("יש להוסיף לפחות עיר אחת לפני ההשוואה.", "error"); return; }
+    if (!payload.parent1.work_address) { showToast("כתובת עבודה של הורה 1 היא שדה חובה.", "error"); return; }
+
+    submitButton.disabled = true;
+    showToast("שולח בקשת השוואה…", "info");
+
+    try {
+      const response = await fetch(`${apiBase}/compare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const rawText = await response.text();
+      let data = null;
+      try { data = rawText ? JSON.parse(rawText) : null; }
+      catch (parseError) { throw new Error(`השרת החזיר תשובה שאינה JSON:\n${rawText}`); }
+
+      if (!response.ok) {
+        const detail = data?.detail ? JSON.stringify(data.detail, null, 2) : rawText;
+        throw new Error(`הבקשה נכשלה עם סטטוס ${response.status}.\n${detail}`);
+      }
+
+      const hasParent2 = Boolean(payload.parent2);
+      const allResults = data.results || [];
+      const rankedResults = rankResultsByGreenFields(allResults, hasParent2);
+      resetComparisonCategoryState();
+      renderOverview(data, rankedResults);
+      renderComparisonTable(rankedResults, hasParent2);
+      showToast("ההשוואה הושלמה בהצלחה.", "info");
+    } catch (error) {
+      const message = error.message === "Failed to fetch"
+        ? "לא ניתן להתחבר לשרת. ודאו ששרת ה-FastAPI פועל בכתובת ה-API שהוגדרה."
+        : (error.message || "הבקשה נכשלה.");
+      showToast(message, "error");
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  form.addEventListener("submit", handleSubmit);
+  renderChildrenFields();
+</script>
+</body>
+</html>

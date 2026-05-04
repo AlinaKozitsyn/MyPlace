@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <title>GovMap Test</title>
+  <script src="https://www.govmap.gov.il/govmap/api/govmap.api.js" defer onload="initGovMap()"></script>
+</head>
+<body>
+  <div id="map" style="width:100%; height:500px;"></div>
+
+  <script>
+    function initGovMap() {
+      govmap.createMap('map', {
+        token: 'WFD6PA',
+        center: { x: 185572.35, y: 576742.73 },
+        level: 5,
+        layers: ['Neighborhood'],
+        visibleLayers: ['Neighborhood'],
+        showXY: true,
+        identifyOnClick: true,
+        background: "2",
+        onLoad: function () {
+          console.log("המפה נטענה");
+        },
+        onError: function (e) {
+          console.error("שגיאה:", e);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

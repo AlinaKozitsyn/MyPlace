@@ -1,0 +1,6 @@
+pandas
+openpyxl
+requests
+fastapi
+uvicorn
+psycopg2-binary
