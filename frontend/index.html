@@ -326,6 +326,91 @@
     /* Carousel dots */
     .carousel-dot { transition: background 200ms ease, transform 200ms ease; }
     .carousel-dot.active { background: #004471; transform: scale(1.3); }
+
+    /* Viz toggle + panel */
+    .viz-toggle-btn {
+      position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+      background: transparent; border: none; cursor: pointer;
+      padding: 0.25rem 0.35rem; border-radius: 6px; color: #004471;
+      opacity: 0.45; transition: opacity 180ms ease, background 180ms ease;
+      display: inline-flex; align-items: center; justify-content: center; z-index: 2;
+    }
+    .viz-toggle-btn:hover { opacity: 1; background: rgba(0,68,113,0.1); }
+    .viz-toggle-btn.viz-active { opacity: 1; color: #005c97; background: rgba(0,92,151,0.14); }
+    .viz-toggle-btn:focus-visible { outline: 3px solid rgba(0,105,114,0.3); outline-offset: 2px; }
+    .viz-panel { padding: 1.25rem 1.5rem 1.5rem; background: rgba(241,244,246,0.55); border-top: 1px solid rgba(193,199,209,0.35); overflow-x: auto; }
+    @keyframes viz-bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .viz-bar { transform-box: fill-box; transform-origin: left center; animation: viz-bar-grow 480ms cubic-bezier(0.4,0,0.2,1) both; }
+    @media (prefers-reduced-motion: reduce) { .viz-bar { animation: none !important; } }
+    rect[data-viz-bar] { cursor: pointer; transition: opacity 150ms ease; }
+    rect[data-viz-bar]:hover { opacity: 0.72; }
+
+    /* Viz expand button */
+    .viz-expand-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.3rem 0.7rem; border: 1px solid rgba(0,68,113,0.25);
+      border-radius: 6px; background: #fff; color: #004471;
+      font-family: 'Heebo','Assistant',sans-serif; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; transition: background 150ms ease, border-color 150ms ease;
+    }
+    .viz-expand-btn:hover { background: rgba(0,68,113,0.07); border-color: rgba(0,68,113,0.4); }
+    .viz-expand-btn:focus-visible { outline: 3px solid rgba(0,105,114,0.3); outline-offset: 2px; }
+
+    /* Tooltip */
+    #viz-tooltip {
+      position: fixed; display: none; pointer-events: none; z-index: 9999;
+      background: #0f1720; color: #fff; border-radius: 8px;
+      padding: 0.4rem 0.75rem; font-family: 'Heebo','Assistant',sans-serif;
+      font-size: 0.82rem; font-weight: 600; white-space: nowrap; direction: rtl;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+
+    /* Expand dialog */
+    #viz-dialog {
+      border: none; border-radius: 16px; padding: 0;
+      max-width: 92vw; width: 900px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22); overflow: hidden;
+    }
+    #viz-dialog::backdrop { background: rgba(15,23,32,0.5); backdrop-filter: blur(4px); }
+    .viz-dialog-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem; border-bottom: 1px solid rgba(193,199,209,0.5);
+      background: #f7fafc; direction: rtl;
+    }
+    .viz-dialog-title { font-family: 'Work Sans','Heebo',sans-serif; font-size: 1rem; font-weight: 800; color: #004471; }
+    .viz-dialog-close {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2rem; height: 2rem; border: none; border-radius: 50%;
+      background: transparent; color: #414750; cursor: pointer;
+      transition: background 150ms ease; flex-shrink: 0;
+    }
+    .viz-dialog-close:hover { background: rgba(0,0,0,0.08); }
+    .viz-dialog-body { padding: 1.5rem 2rem; overflow-x: auto; }
+
+    /* Viz carousel */
+    .viz-carousel { width: 100%; }
+    .viz-carousel-inner { display: flex; align-items: center; gap: 0.5rem; direction: ltr; }
+    .viz-carousel-slide { flex: 1; min-width: 0; }
+    .viz-carousel-arrow {
+      flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+      width: 2.25rem; height: 2.25rem; border-radius: 50%;
+      border: 1px solid rgba(0,68,113,0.22); background: #fff; color: #004471;
+      cursor: pointer; transition: background 150ms ease, border-color 150ms ease;
+    }
+    .viz-carousel-arrow:hover:not(:disabled) { background: rgba(0,68,113,0.08); border-color: rgba(0,68,113,0.45); }
+    .viz-carousel-arrow:disabled { opacity: 0.28; cursor: default; }
+    .viz-carousel-arrow:focus-visible { outline: 3px solid rgba(0,105,114,0.3); outline-offset: 2px; }
+    .viz-carousel-footer {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem; margin-top: 0.65rem; flex-wrap: wrap; direction: ltr;
+    }
+    .viz-dot {
+      width: 8px; height: 8px; border-radius: 50%; border: none;
+      background: rgba(0,68,113,0.2); cursor: pointer; padding: 0;
+      transition: background 200ms ease, transform 200ms ease;
+    }
+    .viz-dot.viz-dot-active { background: #004471; transform: scale(1.35); }
+    .viz-dot:hover:not(.viz-dot-active) { background: rgba(0,68,113,0.45); }
   </style>
 </head>
 <body class="bg-surface text-on-background">
@@ -540,6 +625,18 @@
   </div>
 </footer>
 
+<div id="viz-tooltip"></div>
+
+<dialog id="viz-dialog">
+  <div class="viz-dialog-header">
+    <span class="viz-dialog-title"></span>
+    <button type="button" class="viz-dialog-close" id="viz-dialog-close" aria-label="סגור">
+      <span class="material-symbols-outlined" style="font-size:1.2rem">close</span>
+    </button>
+  </div>
+  <div class="viz-dialog-body"></div>
+</dialog>
+
 <script>
   const form = document.getElementById("compare-form");
   const overview = document.getElementById("overview");
@@ -550,6 +647,51 @@
   const comparisonCategoryState = {};
   let latestComparisonResults = [];
   let latestComparisonHasParent2 = true;
+  const vizCategoryState = {};
+  const VIZ_CATEGORY_IDS = new Set(["costs","commute_parent1","commute_parent2","taxes","quality_of_life","education","safety"]);
+  const VIZ_CITY_COLORS = ["#004471","#006972","#004d10","#005c97","#006d77","#13671f"];
+  function isVizEnabled(categoryId) { return !!vizCategoryState[categoryId]; }
+  const vizCarouselIdx = {};
+  function getCarouselIdx(categoryId) { return vizCarouselIdx[categoryId] || 0; }
+  let scrollSyncController = null;
+
+  const vizTooltip = document.getElementById("viz-tooltip");
+  const vizDialog = document.getElementById("viz-dialog");
+  document.getElementById("viz-dialog-close").addEventListener("click", () => vizDialog.close());
+  vizDialog.addEventListener("click", (e) => { if (e.target === vizDialog) vizDialog.close(); });
+
+  // Carousel navigation inside expand dialog
+  vizDialog.querySelector(".viz-dialog-body").addEventListener("click", (e) => {
+    let catId = null, newIdx = null;
+    const prev = e.target.closest("[data-viz-prev]");
+    const next = e.target.closest("[data-viz-next]");
+    const dot  = e.target.closest("[data-viz-slide]");
+    if (prev) { catId = prev.dataset.vizPrev; newIdx = Math.max(0, getCarouselIdx(catId) - 1); }
+    else if (next) { catId = next.dataset.vizNext; newIdx = getCarouselIdx(catId) + 1; }
+    else if (dot) { catId = dot.dataset.vizSlide; newIdx = parseInt(dot.dataset.vizSlideIdx, 10); }
+    if (catId != null && newIdx != null && !isNaN(newIdx) && latestComparisonResults.length) {
+      vizCarouselIdx[catId] = newIdx;
+      e.currentTarget.innerHTML = renderCategoryViz(catId, latestComparisonResults, true);
+    }
+  });
+
+  // Tooltip on bar hover
+  document.addEventListener("mouseover", (e) => {
+    const bar = e.target.closest("rect[data-viz-bar]");
+    if (!bar) return;
+    vizTooltip.innerHTML = `<span style="opacity:0.65;font-size:0.75rem">${escapeHtml(bar.dataset.metric)}</span>&nbsp;&nbsp;<strong>${escapeHtml(bar.dataset.city)}: ${escapeHtml(bar.dataset.val)}</strong>`;
+    vizTooltip.style.display = "block";
+  });
+  document.addEventListener("mousemove", (e) => {
+    if (vizTooltip.style.display === "none") return;
+    const x = e.clientX + 14;
+    const y = e.clientY - 44;
+    vizTooltip.style.left = Math.min(x, window.innerWidth - vizTooltip.offsetWidth - 12) + "px";
+    vizTooltip.style.top = Math.max(y, 8) + "px";
+  });
+  document.addEventListener("mouseout", (e) => {
+    if (e.target.closest("rect[data-viz-bar]")) vizTooltip.style.display = "none";
+  });
 
   /* ── Connection toggle ── */
   document.getElementById("toggle-connection").addEventListener("click", () => {
@@ -1173,17 +1315,41 @@
     Object.keys(comparisonCategoryState).forEach((categoryId) => {
       delete comparisonCategoryState[categoryId];
     });
+    Object.keys(vizCategoryState).forEach((k) => { delete vizCategoryState[k]; });
+    Object.keys(vizCarouselIdx).forEach((k) => { delete vizCarouselIdx[k]; });
   }
 
   function renderCategorySection(categoryId, title, content) {
     const expanded = isCategoryExpanded(categoryId);
     const arrowClass = expanded ? "expanded" : "collapsed";
+    const showVizToggle = VIZ_CATEGORY_IDS.has(categoryId);
+    const vizActive = isVizEnabled(categoryId);
+    const vizToggle = (showVizToggle && expanded)
+      ? `<button type="button" class="viz-toggle-btn${vizActive ? " viz-active" : ""}" data-viz-category-id="${categoryId}" title="הצג גרף השוואה" aria-label="הצג גרף">
+           <span class="material-symbols-outlined" style="font-size:1.25rem;line-height:1">bar_chart</span>
+         </button>`
+      : "";
+    const vizPanel = (expanded && showVizToggle && vizActive)
+      ? `<div class="viz-panel">
+           <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:0.6rem;direction:rtl">
+             <button type="button" class="viz-expand-btn" data-viz-expand="${categoryId}" data-viz-expand-title="${escapeHtml(title)}">
+               <span class="material-symbols-outlined" style="font-size:1rem;line-height:1">fullscreen</span>
+               הגדל גרף
+             </button>
+           </div>
+           ${renderCategoryViz(categoryId, latestComparisonResults)}
+         </div>`
+      : "";
     return `<section class="category-section">
-      <button type="button" class="category-header" data-category-id="${categoryId}" aria-expanded="${expanded}">
-        <span class="material-symbols-outlined category-arrow ${arrowClass}">expand_more</span>
-        <span class="category-title">${title}</span>
-      </button>
+      <div style="position:relative">
+        ${vizToggle}
+        <button type="button" class="category-header" data-category-id="${categoryId}" aria-expanded="${expanded}">
+          <span class="material-symbols-outlined category-arrow ${arrowClass}">expand_more</span>
+          <span class="category-title">${title}</span>
+        </button>
+      </div>
       ${expanded ? content : ""}
+      ${vizPanel}
     </section>`;
   }
 
@@ -1297,6 +1463,401 @@
       tableRow("עלות חודשית", allResults, (r) => getCommute(r)?.monthly_cost, formatCurrency, "low"),
     ];
     return renderCategorySection(categoryId, title, rows.join(""));
+  }
+
+  function getCategoryMetricGroups(categoryId) {
+    if (categoryId === "costs") return [
+      { label: "שכ״ד חודשי", getter: (r) => (r.costs||{}).rent_monthly, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "low" },
+      { label: "ארנונה חודשית", getter: (r) => (r.costs||{}).arnona_monthly, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "low" },
+      { label: "חינוך חודשי", getter: (r) => (r.costs||{}).education_monthly, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "low" },
+      { label: "נסיעה חודשית", getter: (r) => (r.costs||{}).commute_monthly, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "low" },
+    ];
+    if (categoryId === "commute_parent1") return [
+      { label: "זמן נסיעה (דק׳)", getter: (r) => (r.transport||{}).parent1_work_commute?.duration_min, formatter: (v) => v + " דק׳", bestMode: "low" },
+      { label: "מרחק (ק״מ)", getter: (r) => (r.transport||{}).parent1_work_commute?.distance_km, formatter: (v) => v + " ק״מ", bestMode: "low" },
+      { label: "עלות חודשית", getter: (r) => (r.transport||{}).parent1_work_commute?.monthly_cost, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "low" },
+    ];
+    if (categoryId === "commute_parent2") return [
+      { label: "זמן נסיעה (דק׳)", getter: (r) => (r.transport||{}).parent2_work_commute?.duration_min, formatter: (v) => v + " דק׳", bestMode: "low" },
+      { label: "מרחק (ק״מ)", getter: (r) => (r.transport||{}).parent2_work_commute?.distance_km, formatter: (v) => v + " ק״מ", bestMode: "low" },
+      { label: "עלות חודשית", getter: (r) => (r.transport||{}).parent2_work_commute?.monthly_cost, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "low" },
+    ];
+    if (categoryId === "taxes") return [
+      { label: "הטבת מס %", getter: (r) => { const v = (r.taxes||{}).tax_benefit_percent; return isNoTaxBenefitValue(v) ? null : v; }, formatter: (v) => v + "%", bestMode: "high" },
+      { label: "הטבה שנתית (₪)", getter: (r) => { const v = (r.taxes||{}).tax_benefit_annual; return isNoTaxBenefitValue(v) ? null : v; }, formatter: (v) => "₪" + Math.round(v).toLocaleString(), bestMode: "high" },
+    ];
+    if (categoryId === "quality_of_life") return [
+      { label: "נגישות פוטנציאלית", getter: (r) => getRankComparisonNumber((r.quality_of_life||{}).potential_accessibility_rank, "display_place"), scaleMaxGetter: (r) => getRankComparisonNumber((r.quality_of_life||{}).potential_accessibility_rank, "out_of"), formatter: (v) => "מקום " + Math.round(v), bestMode: "low", chartType: "sliding-scale", scaleMin: 1, startLabel: "מקום ראשון", endLabel: "הדירוג הנמוך בהשוואה" },
+      { label: "מרכזיות (דירוג)", getter: (r) => getRankComparisonNumber((r.quality_of_life||{}).peripherality_rank_2020, "display_place"), scaleMaxGetter: (r) => getRankComparisonNumber((r.quality_of_life||{}).peripherality_rank_2020, "out_of"), formatter: (v) => "מקום " + Math.round(v), bestMode: "low", chartType: "sliding-scale", scaleMin: 1, startLabel: "מקום ראשון", endLabel: "הדירוג הנמוך בהשוואה" },
+      { label: "אשכול חברתי-כלכלי", getter: (r) => getRankComparisonNumber((r.quality_of_life||{}).social_economic_cluster_2021, "value"), formatter: (v) => "אשכול " + Math.round(v) + " מתוך 10", bestMode: "high", chartType: "badge" },
+      { label: "מכוניות למשק בית", getter: (r) => (r.quality_of_life||{}).average_cars_per_household, formatter: (v) => Number(v).toFixed(2), bestMode: "low" },
+    ];
+    if (categoryId === "education") return [
+      { label: "זכאות בגרות %", getter: (r) => (r.education||{}).bagrut_eligibility_rate, formatter: (v) => v + "%", bestMode: "high" },
+      { label: "שיעור נשירה %", getter: (r) => (r.education||{}).dropout_rate_total, formatter: (v) => v + "%", bestMode: "low" },
+      { label: "סה״כ מוסדות", getter: (r) => (r.education||{}).schools_total, formatter: (v) => String(v), bestMode: "high" },
+    ];
+    if (categoryId === "safety") return [
+      { label: "מדד פשיעה", getter: (r) => CRIME_INDEX_RULE.valueSelector((r.safety||{}).crime_index), formatter: (v) => String(v), bestMode: "low" },
+      { label: "אשכול 1 / 1,000", getter: (r) => (r.safety||{}).cluster_1_per_1000, formatter: (v) => Number(v).toFixed(1), bestMode: "low" },
+    ];
+    return [];
+  }
+
+  function buildDotScaleChart(group, allResults, { large = false } = {}) {
+    const SVG_W   = large ? 780 : 520;
+    const LABEL_W = large ? 150 : 130;
+    const VALUE_W = large ? 100 : 90;
+    const TITLE_H = 32;
+    const ROW_H   = 28;
+    const ROW_GAP = 10;
+    const BX      = LABEL_W + 6;
+    const TRACK_W = SVG_W - LABEL_W - VALUE_W - 10;
+    const fontSize = large ? 13 : 11;
+    const DOT_COUNT = 10;
+    const DOT_D   = Math.min(18, Math.floor((TRACK_W - (DOT_COUNT - 1) * 4) / DOT_COUNT));
+    const DOT_GAP = Math.max(2, Math.floor((TRACK_W - DOT_COUNT * DOT_D) / (DOT_COUNT - 1)));
+    const DOT_R   = DOT_D / 2;
+
+    const entries = allResults.map((r, originalIdx) => {
+      let val = null;
+      try { val = group.getter(r); } catch (_) {}
+      return { val, originalIdx };
+    });
+
+    const nums = entries.filter((e) => e.val != null && isFinite(Number(e.val))).map((e) => Number(e.val));
+    if (!nums.length) return `<p style="text-align:center;color:#717881;font-size:0.85rem;padding:0.75rem">אין נתונים להצגה</p>`;
+
+    const sorted = [...entries].sort((a, b) => {
+      const aNull = a.val == null || !isFinite(Number(a.val));
+      const bNull = b.val == null || !isFinite(Number(b.val));
+      if (aNull && bNull) return 0;
+      if (aNull) return 1;
+      if (bNull) return -1;
+      return group.bestMode === "high"
+        ? Number(b.val) - Number(a.val)
+        : Number(a.val) - Number(b.val);
+    });
+
+    const trackCenterX = BX + TRACK_W / 2;
+    let rows = "";
+    rows += `<text x="${trackCenterX}" y="22" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="${large ? 14 : 12}" font-weight="800" fill="#004471">${group.label}</text>`;
+
+    sorted.forEach(({ val, originalIdx }, sortedIdx) => {
+      const numVal = val != null ? Number(val) : null;
+      const by = TITLE_H + sortedIdx * (ROW_H + ROW_GAP);
+      const midY = by + ROW_H / 2 + 4;
+      const color = VIZ_CITY_COLORS[originalIdx % VIZ_CITY_COLORS.length];
+      const cityName = allResults[originalIdx].city || `עיר ${originalIdx + 1}`;
+      const displayVal = numVal != null ? (group.formatter ? group.formatter(numVal) : String(numVal)) : "—";
+      const filledCount = numVal != null ? Math.round(Math.max(0, Math.min(DOT_COUNT, numVal))) : 0;
+
+      rows += `<text x="${LABEL_W}" y="${midY}" text-anchor="end" font-family="Heebo,Assistant,sans-serif" font-size="${fontSize}" fill="${color}" font-weight="700" pointer-events="none">${cityName}</text>`;
+      for (let i = 0; i < DOT_COUNT; i++) {
+        const cx = BX + DOT_R + i * (DOT_D + DOT_GAP);
+        const cy = by + ROW_H / 2;
+        rows += `<circle cx="${cx}" cy="${cy}" r="${DOT_R}" fill="${i < filledCount ? color : 'rgba(193,199,209,0.45)'}"/>`;
+      }
+      rows += `<rect data-viz-bar="1" data-city="${escapeHtml(cityName)}" data-val="${escapeHtml(displayVal)}" data-metric="${escapeHtml(group.label)}" x="${BX}" y="${by}" width="${TRACK_W}" height="${ROW_H}" fill="transparent" style="cursor:pointer"/>`;
+      rows += `<text x="${BX + TRACK_W + 7}" y="${midY}" font-family="Heebo,Assistant,sans-serif" font-size="${fontSize}" fill="${numVal !== null ? '#0f1720' : '#717881'}" font-weight="600" pointer-events="none">${displayVal}</text>`;
+    });
+
+    const svgH = TITLE_H + allResults.length * (ROW_H + ROW_GAP) + 4;
+    return `<svg width="100%" viewBox="0 0 ${SVG_W} ${svgH}" style="max-width:${SVG_W}px;display:block;margin:0 auto;direction:ltr" role="img" aria-label="${escapeHtml(group.label)}">${rows}</svg>`;
+  }
+
+  function buildSlidingScaleChart(group, allResults, { large = false } = {}) {
+    const SVG_W   = large ? 780 : 520;
+    const MARGIN_X = large ? 55 : 44;
+    const TRACK_W  = SVG_W - 2 * MARGIN_X;
+    const BADGE_W  = large ? 84 : 72;
+    const BADGE_H  = 36;
+    const BADGE_R  = 6;
+    const CONN_H   = 10;
+    const DOT_R    = 3;
+    const TITLE_H  = 26;
+    const MIN_GAP  = 4;
+    const scoreFontSz = large ? 13 : 11;
+    const nameFontSz  = large ? 10 : 9;
+
+    const entries = allResults.map((r, originalIdx) => {
+      let val = null;
+      try { val = group.getter(r); } catch (_) {}
+      return { val, originalIdx };
+    });
+
+    const nums = entries
+      .filter((e) => e.val != null && isFinite(Number(e.val)))
+      .map((e) => Number(e.val));
+    if (!nums.length)
+      return `<p style="text-align:center;color:#717881;font-size:0.85rem;padding:0.75rem">אין נתונים להצגה</p>`;
+
+    const scaleMin = group.scaleMin ?? 1;
+
+    // Global max for footnote (from API out_of) — not used for the track scale
+    let globalMax = null;
+    if (group.scaleMaxGetter) {
+      const outOfVals = allResults
+        .map((r) => { try { return group.scaleMaxGetter(r); } catch (_) { return null; } })
+        .filter((v) => v != null && isFinite(Number(v)))
+        .map(Number);
+      if (outOfVals.length) globalMax = Math.max(...outOfVals);
+    }
+
+    // Local scale: highest rank among compared cities only
+    const scaleMax   = group.scaleMax ?? Math.max(...nums);
+    const scaleRange = Math.max(1, scaleMax - scaleMin);
+
+    // Step 1: compute pixel position for each data point, sort left→right
+    const positioned = entries
+      .filter((e) => e.val != null && isFinite(Number(e.val)))
+      .map(({ val, originalIdx }) => {
+        const numVal  = Number(val);
+        const ratio   = Math.max(0, Math.min(1, (numVal - scaleMin) / scaleRange));
+        const markerX = MARGIN_X + ratio * TRACK_W;
+        return { numVal, originalIdx, markerX, lane: "above", badgeCX: markerX };
+      })
+      .sort((a, b) => a.markerX - b.markerX);
+
+    // Step 2: greedy lane assignment — "above" first, fall back to "below",
+    //         last resort: nudge right within the less-populated lane.
+    const laneCXs = { above: [], below: [] };
+
+    function wouldCollide(lane, cx) {
+      return laneCXs[lane].some((ex) => Math.abs(cx - ex) < BADGE_W + MIN_GAP);
+    }
+    function nudgedCX(lane, idealCX) {
+      let cx = idealCX;
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const ex of laneCXs[lane]) {
+          if (Math.abs(cx - ex) < BADGE_W + MIN_GAP) { cx = ex + BADGE_W + MIN_GAP; changed = true; }
+        }
+      }
+      return Math.min(cx, MARGIN_X + TRACK_W - BADGE_W / 2);
+    }
+
+    for (const p of positioned) {
+      if (!wouldCollide("above", p.markerX)) {
+        p.lane = "above"; p.badgeCX = p.markerX;
+      } else if (!wouldCollide("below", p.markerX)) {
+        p.lane = "below"; p.badgeCX = p.markerX;
+      } else {
+        p.lane   = laneCXs.above.length <= laneCXs.below.length ? "above" : "below";
+        p.badgeCX = nudgedCX(p.lane, p.markerX);
+      }
+      p.badgeCX = Math.max(MARGIN_X + BADGE_W / 2, p.badgeCX);
+      laneCXs[p.lane].push(p.badgeCX);
+    }
+
+    // Step 3: derive SVG height from actual lane usage + optional disclaimer
+    const hasBelow        = positioned.some((p) => p.lane === "below");
+    const BADGE_TOP_ABOVE = TITLE_H + 8;
+    const TRACK_Y         = BADGE_TOP_ABOVE + BADGE_H + CONN_H;
+    const BADGE_TOP_BELOW = TRACK_Y + DOT_R + CONN_H;
+    const SCALE_TOP       = (hasBelow ? BADGE_TOP_BELOW + BADGE_H : TRACK_Y) + 10;
+    const DISCLAIMER_H    = globalMax != null ? 26 : 0;
+    const SVG_H           = SCALE_TOP + 32 + DISCLAIMER_H;
+
+    let svg = "";
+
+    // Title
+    svg += `<text x="${SVG_W / 2}" y="18" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="${large ? 13 : 11}" font-weight="800" fill="#004471">${escapeHtml(group.label)}</text>`;
+
+    // Track line + end ticks
+    svg += `<line x1="${MARGIN_X}" y1="${TRACK_Y}" x2="${MARGIN_X + TRACK_W}" y2="${TRACK_Y}" stroke="rgba(193,199,209,0.65)" stroke-width="2" stroke-linecap="round"/>`;
+    svg += `<line x1="${MARGIN_X}" y1="${TRACK_Y - 4}" x2="${MARGIN_X}" y2="${TRACK_Y + 4}" stroke="rgba(193,199,209,0.8)" stroke-width="1.5"/>`;
+    svg += `<line x1="${MARGIN_X + TRACK_W}" y1="${TRACK_Y - 4}" x2="${MARGIN_X + TRACK_W}" y2="${TRACK_Y + 4}" stroke="rgba(193,199,209,0.8)" stroke-width="1.5"/>`;
+
+    // Scale endpoint labels
+    const leftTxt  = group.startLabel || String(scaleMin);
+    const rightTxt = group.endLabel   || String(scaleMax);
+    svg += `<text x="${MARGIN_X}" y="${SCALE_TOP + 14}" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="9" fill="#a0a8b3">${escapeHtml(String(scaleMin))}</text>`;
+    svg += `<text x="${MARGIN_X}" y="${SCALE_TOP + 25}" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="8" fill="#c4c9d4">${escapeHtml(leftTxt)}</text>`;
+    svg += `<text x="${MARGIN_X + TRACK_W}" y="${SCALE_TOP + 14}" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="9" fill="#a0a8b3">${escapeHtml(String(scaleMax))}</text>`;
+    svg += `<text x="${MARGIN_X + TRACK_W}" y="${SCALE_TOP + 25}" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="8" fill="#c4c9d4">${escapeHtml(rightTxt)}</text>`;
+
+    // Disclaimer — foreignObject so the browser's HTML engine handles RTL bidi correctly.
+    // dir="rtl" + text-align:right ensures * is far-right and . is far-left.
+    if (globalMax != null) {
+      svg += `<foreignObject x="${MARGIN_X}" y="${SCALE_TOP + 28}" width="${TRACK_W}" height="22"><p xmlns="http://www.w3.org/1999/xhtml" dir="rtl" style="font-family:Heebo,Assistant,sans-serif;font-size:7.5px;color:#b4bac6;text-align:right;direction:rtl;margin:0;padding:0;line-height:1.4;white-space:nowrap">* הגרף הוא יחסי. הדירוג הנמוך ביותר מבין כלל הרשויות הוא ${Math.round(globalMax)}.</p></foreignObject>`;
+    }
+
+    // City markers
+    for (const { numVal, originalIdx, markerX, lane, badgeCX } of positioned) {
+      const badgeTop  = lane === "above" ? BADGE_TOP_ABOVE : BADGE_TOP_BELOW;
+      const connY1    = lane === "above" ? badgeTop + BADGE_H + 1 : badgeTop - 1;
+      const connY2    = lane === "above" ? TRACK_Y - DOT_R - 1    : TRACK_Y + DOT_R + 1;
+      const badgeLeft = badgeCX - BADGE_W / 2;
+      const color     = VIZ_CITY_COLORS[originalIdx % VIZ_CITY_COLORS.length];
+      const cityName  = allResults[originalIdx].city || `עיר ${originalIdx + 1}`;
+      const displayVal = group.formatter ? group.formatter(numVal) : String(numVal);
+
+      // Floating badge
+      svg += `<rect x="${badgeLeft}" y="${badgeTop}" width="${BADGE_W}" height="${BADGE_H}" rx="${BADGE_R}" ry="${BADGE_R}" fill="${color}12" stroke="${color}45" stroke-width="1"/>`;
+      svg += `<text x="${badgeCX}" y="${badgeTop + 14}" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="${nameFontSz}" font-weight="600" fill="${color}">${escapeHtml(cityName)}</text>`;
+      svg += `<text x="${badgeCX}" y="${badgeTop + 28}" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="${scoreFontSz}" font-weight="900" fill="${color}">${escapeHtml(displayVal)}</text>`;
+
+      // 1px connector from badge edge to micro-dot (diagonal when badge is offset)
+      svg += `<line x1="${badgeCX}" y1="${connY1}" x2="${markerX}" y2="${connY2}" stroke="${color}" stroke-width="1" opacity="0.5"/>`;
+
+      // Micro-dot on track
+      svg += `<circle cx="${markerX}" cy="${TRACK_Y}" r="${DOT_R}" fill="${color}"/>`;
+
+      // Hit area for tooltip
+      svg += `<rect data-viz-bar="1" data-city="${escapeHtml(cityName)}" data-val="${escapeHtml(displayVal)}" data-metric="${escapeHtml(group.label)}" x="${markerX - 10}" y="${TRACK_Y - 12}" width="20" height="24" fill="transparent" style="cursor:pointer"/>`;
+    }
+
+    return `<svg width="100%" viewBox="0 0 ${SVG_W} ${SVG_H}" style="display:block;width:100%;direction:ltr" role="img" aria-label="${escapeHtml(group.label)}">${svg}</svg>`;
+  }
+
+  function buildBadgeDisplay(group, allResults) {
+    const entries = allResults.map((r, originalIdx) => {
+      let val = null;
+      try { val = group.getter(r); } catch (_) {}
+      return { val, originalIdx };
+    });
+
+    const nums = entries.filter((e) => e.val != null && isFinite(Number(e.val))).map((e) => Number(e.val));
+    if (!nums.length) return `<p style="text-align:center;color:#717881;font-size:0.85rem;padding:0.75rem">אין נתונים להצגה</p>`;
+
+    const sorted = [...entries]
+      .filter((e) => e.val != null && isFinite(Number(e.val)))
+      .sort((a, b) => group.bestMode === "high"
+        ? Number(b.val) - Number(a.val)
+        : Number(a.val) - Number(b.val)
+      );
+
+    const items = sorted.map(({ val, originalIdx }) => {
+      const numVal    = Number(val);
+      const color     = VIZ_CITY_COLORS[originalIdx % VIZ_CITY_COLORS.length];
+      const cityName  = allResults[originalIdx].city || `עיר ${originalIdx + 1}`;
+      const displayVal = group.formatter ? group.formatter(numVal) : String(numVal);
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:0.45rem;">
+        <span style="font-family:'Heebo','Assistant',sans-serif;font-size:0.8rem;font-weight:700;color:${color}">${escapeHtml(cityName)}</span>
+        <span style="font-family:'Heebo','Assistant',sans-serif;font-size:1.1rem;font-weight:900;color:${color};background:${color}18;padding:0.4rem 1.1rem;border-radius:2rem;white-space:nowrap;letter-spacing:0.01em">${escapeHtml(displayVal)}</span>
+      </div>`;
+    }).join("");
+
+    return `<div style="direction:rtl;font-family:'Heebo','Assistant',sans-serif;">
+      <p style="text-align:center;font-size:0.78rem;font-weight:800;color:#004471;margin:0 0 0.9rem">${escapeHtml(group.label)}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:1.75rem;justify-content:center;align-items:flex-start;padding:0.25rem 0.5rem">${items}</div>
+    </div>`;
+  }
+
+  function buildSingleGroupChart(group, allResults, { large = false } = {}) {
+    if (group.chartType === "dots") return buildDotScaleChart(group, allResults, { large });
+    if (group.chartType === "badge") return buildBadgeDisplay(group, allResults);
+    if (group.chartType === "sliding-scale") return buildSlidingScaleChart(group, allResults, { large });
+    const SVG_W  = large ? 780 : 520;
+    const BAR_H  = 28;
+    const BAR_GAP = 10;
+    // Fixed label column — city name lives here, fully visible regardless of bar width
+    const LABEL_W = large ? 150 : 130;
+    const VALUE_W = large ? 100 : 90;
+    const TITLE_H = 32;
+    const BX      = LABEL_W + 6;           // bar track starts after label column
+    const TRACK_W = SVG_W - LABEL_W - VALUE_W - 10;
+    const fontSize = large ? 13 : 11;
+
+    const entries = allResults.map((r, originalIdx) => {
+      let val = null;
+      try { val = group.getter(r); } catch (_) {}
+      return { val, originalIdx };
+    });
+
+    const nums = entries.filter((e) => e.val != null && isFinite(Number(e.val))).map((e) => Number(e.val));
+    if (!nums.length) return `<p style="text-align:center;color:#717881;font-size:0.85rem;padding:0.75rem">אין נתונים להצגה</p>`;
+
+    const sorted = [...entries].sort((a, b) => {
+      const aNull = a.val == null || !isFinite(Number(a.val));
+      const bNull = b.val == null || !isFinite(Number(b.val));
+      if (aNull && bNull) return 0;
+      if (aNull) return 1;
+      if (bNull) return -1;
+      return group.bestMode === "high"
+        ? Number(b.val) - Number(a.val)
+        : Number(a.val) - Number(b.val);
+    });
+
+    const domainMax = Math.max(...nums) || 1;
+    const domainMin = Math.min(...nums);
+    const domainRange = Math.max(1, domainMax - domainMin);
+    let rows = "";
+
+    // Metric title centered above the bar track area
+    const trackCenterX = BX + TRACK_W / 2;
+    rows += `<text x="${trackCenterX}" y="22" text-anchor="middle" font-family="Heebo,Assistant,sans-serif" font-size="${large ? 14 : 12}" font-weight="800" fill="#004471">${group.label}</text>`;
+
+    sorted.forEach(({ val, originalIdx }, sortedIdx) => {
+      const numVal = val != null ? Number(val) : null;
+      // invertScale: lower value = better rank → invert so best city gets the longest bar
+      const ratio = numVal != null && isFinite(numVal)
+        ? group.invertScale
+          ? Math.max(0, (domainMax - numVal) / domainRange)
+          : Math.max(0, numVal / domainMax)
+        : 0;
+      const bw     = Math.max(4, ratio * TRACK_W);
+      const by     = TITLE_H + sortedIdx * (BAR_H + BAR_GAP);
+      const color  = VIZ_CITY_COLORS[originalIdx % VIZ_CITY_COLORS.length];
+      const animDelay = (sortedIdx * 60) + "ms";
+      const cityName  = allResults[originalIdx].city || `עיר ${originalIdx + 1}`;
+      const displayVal = val != null ? (group.formatter ? group.formatter(numVal) : String(numVal)) : "—";
+      const midY = by + BAR_H / 2 + 4;  // vertical center of bar
+
+      // City name in label column — right-aligned against bar edge, always fully visible
+      rows += `<text x="${LABEL_W}" y="${midY}" text-anchor="end" font-family="Heebo,Assistant,sans-serif" font-size="${fontSize}" fill="${color}" font-weight="700" pointer-events="none">${cityName}</text>`;
+      // Track background
+      rows += `<rect x="${BX}" y="${by}" width="${TRACK_W}" height="${BAR_H}" rx="5" fill="rgba(193,199,209,0.28)"/>`;
+      // Animated bar — only rendered when a real value exists (null = no data, no bar)
+      if (numVal !== null) {
+        rows += `<rect class="viz-bar" data-viz-bar="1" data-city="${escapeHtml(cityName)}" data-val="${escapeHtml(displayVal)}" data-metric="${escapeHtml(group.label)}" x="${BX}" y="${by}" width="${bw}" height="${BAR_H}" rx="5" fill="${color}" style="animation-delay:${animDelay}"/>`;
+      }
+      // Value to the right of track (dimmed for missing data)
+      rows += `<text x="${BX + TRACK_W + 7}" y="${midY}" font-family="Heebo,Assistant,sans-serif" font-size="${fontSize}" fill="${numVal !== null ? '#0f1720' : '#717881'}" font-weight="600" pointer-events="none">${displayVal}</text>`;
+    });
+
+    const svgH = TITLE_H + allResults.length * (BAR_H + BAR_GAP) + 4;
+    return `<svg width="100%" viewBox="0 0 ${SVG_W} ${svgH}" style="max-width:${SVG_W}px;display:block;margin:0 auto;direction:ltr" role="img" aria-label="${escapeHtml(group.label)}">${rows}</svg>`;
+  }
+
+  function renderCategoryVizCarousel(categoryId, allResults, currentIdx, large = false) {
+    const allGroups = getCategoryMetricGroups(categoryId);
+    const validGroups = allGroups.filter((group) =>
+      allResults.some((r) => { try { const v = group.getter(r); return v != null && isFinite(Number(v)); } catch (_) { return false; } })
+    );
+    if (!validGroups.length) return `<p style="text-align:center;color:#717881;font-size:0.85rem">אין נתונים להצגה</p>`;
+
+    const clampedIdx = Math.max(0, Math.min(currentIdx, validGroups.length - 1));
+    const total = validGroups.length;
+    const chartSvg = buildSingleGroupChart(validGroups[clampedIdx], allResults, { large });
+
+    const dots = validGroups.map((g, i) =>
+      `<button type="button" class="viz-dot${i === clampedIdx ? " viz-dot-active" : ""}" data-viz-slide="${categoryId}" data-viz-slide-idx="${i}" aria-label="${escapeHtml(g.label)}" title="${escapeHtml(g.label)}"></button>`
+    ).join("");
+    const counter = total > 1 ? `<span style="font-size:0.75rem;color:#717881;font-family:Heebo,sans-serif;font-weight:600;min-width:2.5rem;text-align:center">${clampedIdx + 1} / ${total}</span>` : "";
+
+    const prevDis = clampedIdx === 0 ? "disabled" : "";
+    const nextDis = clampedIdx === total - 1 ? "disabled" : "";
+
+    return `<div class="viz-carousel">
+      <div class="viz-carousel-inner">
+        <button type="button" class="viz-carousel-arrow" data-viz-prev="${categoryId}" ${prevDis} aria-label="גרף קודם">
+          <span class="material-symbols-outlined" style="font-size:1.25rem;line-height:1">chevron_left</span>
+        </button>
+        <div class="viz-carousel-slide">${chartSvg}</div>
+        <button type="button" class="viz-carousel-arrow" data-viz-next="${categoryId}" ${nextDis} aria-label="גרף הבא">
+          <span class="material-symbols-outlined" style="font-size:1.25rem;line-height:1">chevron_right</span>
+        </button>
+      </div>
+      ${total > 1 ? `<div class="viz-carousel-footer">${dots}${counter}</div>` : ""}
+    </div>`;
+  }
+
+  function renderCategoryViz(categoryId, allResults, large = false) {
+    if (!allResults.length) return "";
+    return renderCategoryVizCarousel(categoryId, allResults, getCarouselIdx(categoryId), large);
   }
 
   function renderComparisonTable(allResults, hasParent2 = true) {
@@ -1479,30 +2040,79 @@
     const stickyHeaderEl = document.getElementById("sticky-header-wrapper");
     const scrollShellEl = document.getElementById("comparison-scroll-shell");
     if (stickyHeaderEl && scrollShellEl) {
+      if (scrollSyncController) scrollSyncController.abort();
+      scrollSyncController = new AbortController();
+      const { signal } = scrollSyncController;
       let _syncing = false;
       scrollShellEl.addEventListener("scroll", () => {
         if (_syncing) return;
         _syncing = true;
         stickyHeaderEl.scrollLeft = scrollShellEl.scrollLeft;
         _syncing = false;
-      });
+      }, { signal });
       stickyHeaderEl.addEventListener("scroll", () => {
         if (_syncing) return;
         _syncing = true;
         scrollShellEl.scrollLeft = stickyHeaderEl.scrollLeft;
         _syncing = false;
-      });
+      }, { signal });
     }
   }
 
   results.addEventListener("click", (event) => {
+    const prevBtn = event.target.closest("[data-viz-prev]");
+    if (prevBtn) {
+      const catId = prevBtn.dataset.vizPrev;
+      if (catId) { vizCarouselIdx[catId] = Math.max(0, getCarouselIdx(catId) - 1); renderComparisonTable(latestComparisonResults, latestComparisonHasParent2); }
+      return;
+    }
+    const nextBtn = event.target.closest("[data-viz-next]");
+    if (nextBtn) {
+      const catId = nextBtn.dataset.vizNext;
+      if (catId) { vizCarouselIdx[catId] = getCarouselIdx(catId) + 1; renderComparisonTable(latestComparisonResults, latestComparisonHasParent2); }
+      return;
+    }
+    const dotBtn = event.target.closest("[data-viz-slide]");
+    if (dotBtn) {
+      const catId = dotBtn.dataset.vizSlide;
+      const idx = parseInt(dotBtn.dataset.vizSlideIdx, 10);
+      if (catId && !isNaN(idx)) { vizCarouselIdx[catId] = idx; renderComparisonTable(latestComparisonResults, latestComparisonHasParent2); }
+      return;
+    }
+
+    const expandBtn = event.target.closest("[data-viz-expand]");
+    if (expandBtn) {
+      const catId = expandBtn.dataset.vizExpand;
+      const catTitle = expandBtn.dataset.vizExpandTitle;
+      if (catId && latestComparisonResults.length) {
+        vizDialog.querySelector(".viz-dialog-title").textContent = catTitle;
+        vizDialog.querySelector(".viz-dialog-body").innerHTML = renderCategoryViz(catId, latestComparisonResults, true);
+        vizDialog.showModal();
+      }
+      return;
+    }
+
+    const vizBtn = event.target.closest("[data-viz-category-id]");
+    if (vizBtn) {
+      const catId = vizBtn.dataset.vizCategoryId;
+      if (catId) {
+        vizCategoryState[catId] = !isVizEnabled(catId);
+        if (latestComparisonResults.length) {
+          renderComparisonTable(latestComparisonResults, latestComparisonHasParent2);
+        }
+      }
+      return;
+    }
+
     const toggleButton = event.target.closest("[data-category-id]");
     if (!toggleButton) return;
 
     const { categoryId } = toggleButton.dataset;
     if (!categoryId) return;
 
-    comparisonCategoryState[categoryId] = !isCategoryExpanded(categoryId);
+    const nowExpanded = !isCategoryExpanded(categoryId);
+    comparisonCategoryState[categoryId] = nowExpanded;
+    if (!nowExpanded) delete vizCategoryState[categoryId];
     if (latestComparisonResults.length) {
       renderComparisonTable(latestComparisonResults, latestComparisonHasParent2);
     }
