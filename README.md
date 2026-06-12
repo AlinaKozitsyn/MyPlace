@@ -124,8 +124,7 @@ frontend/           HTML UI
 
 ## Data sources
 
-- Central Bureau of Statistics (CBS) — population, education, households, age, socio-economic index
+- Central Bureau of Statistics (CBS) — population, education, households, age, socio-economic index,peripherality and accessibility rankings
 - Israel Police — crime statistics by settlement
-- Ministry of Interior — peripherality and accessibility rankings
 - Nadlan / district rental data — 2025 rent prices
 - Ministry of Finance — income tax benefit rates for 2026 (mas hafchata)
