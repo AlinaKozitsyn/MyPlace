@@ -1,9 +1,7 @@
 from typing import List, Optional
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-
 from engine import DataRepo, compare_cities
 from schemas import CompareResponseOut
 
@@ -17,22 +15,19 @@ app.add_middleware(
 )
 repo = DataRepo()
 
-
 @app.get("/")
 def root():
     return {"message": "Family project API is running. Go to /docs"}
 
-
 class ChildModel(BaseModel):
     age: int = Field(ge=0, le=30)
-
 
 class FamilyModel(BaseModel):
     parent1_income: float | None = Field(default=None, ge=0)
     parent2_income: float | None = Field(default=None, ge=0)
     desired_rooms: int | None = Field(default=None, ge=1, le=10)
+    apartment_sqm: float | None = Field(default=None, ge=1, le=1000)
     children: List[ChildModel] = Field(default_factory=list)
-
 
 class ParentCommuteModel(BaseModel):
     work_address: str = Field(min_length=3)

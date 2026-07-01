@@ -17,6 +17,21 @@ ROOM_TO_SQM = {
 }
 
 
+def calculate_arnona_monthly_from_avg(
+    apartment_sqm: float,
+    avg_price_per_sqm_yearly: float,
+) -> float:
+    """
+    Estimates monthly arnona using the settlement-level average annual price
+    per SQM sourced from the CBS arnona_price_per_sqm table.
+
+    Both inputs must be positive. Returns monthly cost in ILS (yearly / 12).
+    """
+    if apartment_sqm <= 0 or avg_price_per_sqm_yearly <= 0:
+        raise ValueError("apartment_sqm and avg_price_per_sqm_yearly must be positive")
+    return round((apartment_sqm * avg_price_per_sqm_yearly) / 12, 2)
+
+
 def normalize_area_name(text: str) -> str:
     value = text.strip().lower()
     value = value.replace("\u05be", " ").replace("-", " ")

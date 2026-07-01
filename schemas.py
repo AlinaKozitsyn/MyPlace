@@ -10,6 +10,7 @@ class InputFamilySummary(BaseModel):
     parent1_income: Optional[float] = None
     parent2_income: Optional[float] = None
     desired_rooms: Optional[int] = None
+    apartment_sqm: Optional[float] = None
     children_count: int = 0
 
 class InputSummaryOut(BaseModel):

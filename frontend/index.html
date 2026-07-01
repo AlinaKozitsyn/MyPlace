@@ -329,11 +329,12 @@
 
     /* Viz toggle + panel */
     .viz-toggle-btn {
-      position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+      position: absolute; right: 3rem; top: 50%; transform: translateY(-50%);
       background: transparent; border: none; cursor: pointer;
-      padding: 0.25rem 0.35rem; border-radius: 6px; color: #004471;
+      padding: 0.25rem 0.6rem; border-radius: 6px; color: #004471;
       opacity: 0.45; transition: opacity 180ms ease, background 180ms ease;
       display: inline-flex; align-items: center; justify-content: center; z-index: 2;
+      font-family: 'Heebo','Assistant',sans-serif; font-size: 0.82rem; font-weight: 600; white-space: nowrap;
     }
     .viz-toggle-btn:hover { opacity: 1; background: rgba(0,68,113,0.1); }
     .viz-toggle-btn.viz-active { opacity: 1; color: #005c97; background: rgba(0,92,151,0.14); }
@@ -364,6 +365,27 @@
       font-size: 0.82rem; font-weight: 600; white-space: nowrap; direction: rtl;
       box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     }
+
+    /* Row label note tooltip */
+    .row-label-note { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+    .row-note-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1rem; height: 1rem; font-size: 0.65rem; font-weight: 700;
+      background: var(--md-sys-color-secondary-container, #dce9f9);
+      color: var(--md-sys-color-on-secondary-container, #0a3055);
+      border-radius: 50%; cursor: help; flex-shrink: 0;
+    }
+    .row-note-bubble {
+      position: absolute; bottom: calc(100% + 8px); right: 0;
+      background: #0f1720; color: #fff; border-radius: 10px;
+      padding: 10px 14px; font-size: 0.82rem; font-weight: 400; line-height: 1.55;
+      direction: rtl; text-align: right;
+      width: max-content; max-width: 300px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 200;
+    }
+    .row-label-note:hover .row-note-bubble,
+    .row-label-note:focus-within .row-note-bubble { opacity: 1; }
 
     /* Expand dialog */
     #viz-dialog {
@@ -509,6 +531,11 @@
                 <option value="4" selected>4 חדרים</option>
                 <option value="5">5 חדרים</option>
               </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="apartment-sqm">שטח הדירה (מ"ר)</label>
+              <input id="apartment-sqm" name="apartmentSqm" type="number" min="1" max="1000" step="1" placeholder="לדוגמה: 100"
+                class="field-input w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm border-none focus:outline-none">
             </div>
             <div>
               <label class="block text-sm font-semibold text-on-surface-variant mb-2" for="children-count">מספר ילדים</label>
@@ -1112,7 +1139,9 @@
 
     const labelCells = rows.map((row, rowIndex) => `
       <div class="section-grid-label sticky-label-cell" style="grid-column: 1; grid-row: ${rowIndex + 1};">
-        ${row.label}
+        ${row.tooltip
+          ? `<span class="row-label-note">${row.label}<span class="row-note-icon" tabindex="0" aria-label="${escapeHtml(row.tooltip)}">i</span><span class="row-note-bubble">${escapeHtml(row.tooltip)}</span></span>`
+          : row.label}
       </div>
     `).join("");
 
@@ -1325,8 +1354,8 @@
     const showVizToggle = VIZ_CATEGORY_IDS.has(categoryId);
     const vizActive = isVizEnabled(categoryId);
     const vizToggle = (showVizToggle && expanded)
-      ? `<button type="button" class="viz-toggle-btn${vizActive ? " viz-active" : ""}" data-viz-category-id="${categoryId}" title="הצג גרף השוואה" aria-label="הצג גרף">
-           <span class="material-symbols-outlined" style="font-size:1.25rem;line-height:1">bar_chart</span>
+      ? `<button type="button" class="viz-toggle-btn${vizActive ? " viz-active" : ""}" data-viz-category-id="${categoryId}" title="הצג נתונים כתרשים" aria-label="הצג נתונים כתרשים">
+           הצג נתונים כתרשים
          </button>`
       : "";
     const vizPanel = (expanded && showVizToggle && vizActive)
@@ -1500,6 +1529,8 @@
     if (categoryId === "safety") return [
       { label: "מדד פשיעה", getter: (r) => CRIME_INDEX_RULE.valueSelector((r.safety||{}).crime_index), formatter: (v) => String(v), bestMode: "low" },
       { label: "אשכול 1 / 1,000", getter: (r) => (r.safety||{}).cluster_1_per_1000, formatter: (v) => Number(v).toFixed(1), bestMode: "low" },
+      { label: "אשכול 2 / 1,000", getter: (r) => (r.safety||{}).cluster_2_per_1000, formatter: (v) => Number(v).toFixed(1), bestMode: "low" },
+      { label: "אשכול 3 / 1,000", getter: (r) => (r.safety||{}).cluster_3_per_1000, formatter: (v) => Number(v).toFixed(1), bestMode: "low" },
     ];
     return [];
   }
@@ -1908,7 +1939,10 @@
     const costRows = [
       tableRow("נסיעה לעבודה", allResults, (r) => (r.costs || {}).commute_monthly, formatCurrency, "low"),
       tableRow("שכ״ד", allResults, (r) => (r.costs || {}).rent_monthly, formatCurrency, "low"),
-      tableRow("ארנונה", allResults, (r) => (r.costs || {}).arnona_monthly, formatCurrency, "low"),
+      tableRow(
+        `<span class="row-label-note">ארנונה<span class="row-note-icon" tabindex="0" aria-label="המחיר מחושב לפי ממוצע המחיר בישוב">i</span><span class="row-note-bubble">המחיר מחושב לפי ממוצע המחיר בישוב</span></span>`,
+        allResults, (r) => (r.costs || {}).arnona_monthly, formatCurrency, "low"
+      ),
       tableRow("חינוך", allResults, (r) => (r.costs || {}).education_monthly, formatCurrency, "low"),
     ].join("");
 
@@ -1963,43 +1997,13 @@
 
     // Safety
     const safetyRows = [
-      { label: "מדד פשיעה", getter: (r) => (r.safety || {}).crime_index, formatter: formatCrimeIndex, bestMode: "low", bestOptions: CRIME_INDEX_RULE },
-      { label: "אשכול 1 / 1,000", getter: (r) => (r.safety || {}).cluster_1_per_1000, formatter: formatValue, bestMode: "low" },
-      { label: "אשכול 2 / 1,000", getter: (r) => (r.safety || {}).cluster_2_per_1000, formatter: formatValue, bestMode: "low" },
-      { label: "אשכול 3 / 1,000", getter: (r) => (r.safety || {}).cluster_3_per_1000, formatter: formatValue, bestMode: "low" },
+      { label: "מדד פשיעה", getter: (r) => (r.safety || {}).crime_index, formatter: formatCrimeIndex, bestMode: "low", bestOptions: CRIME_INDEX_RULE, tooltip: "מספר כלל אירועי הפשיעה לאלף תושבים בישוב" },
+      { label: "אשכול 1 / 1,000", getter: (r) => (r.safety || {}).cluster_1_per_1000, formatter: formatValue, bestMode: "low", tooltip: "עבירות קלות (למשל: איומים, שימוש בסמים), לאלף תושבים" },
+      { label: "אשכול 2 / 1,000", getter: (r) => (r.safety || {}).cluster_2_per_1000, formatter: formatValue, bestMode: "low", tooltip: "עבירות בינוניות (למשל: פריצות, גניבות), לאלף תושבים" },
+      { label: "אשכול 3 / 1,000", getter: (r) => (r.safety || {}).cluster_3_per_1000, formatter: formatValue, bestMode: "low", tooltip: "עבירות קשות (למשל: תקיפה, רצח), לאלף תושבים" },
     ];
     const safetyMissingColumns = allResults.map((result) => CRIME_INDEX_RULE.valueSelector((result.safety || {}).crime_index) === null);
     const safetySection = renderSectionGrid("safety", "ביטחון", allResults, safetyRows, safetyMissingColumns, EMPTY_TEXT);
-
-    // Highlights & Warnings
-    const insightsSection = renderCategorySection("insights", "יתרונות ואזהרות", `<div class="p-6 bg-surface-container-low/30">
-      <div class="grid gap-4" style="grid-template-columns: ${'1fr '.repeat(allResults.length)}">
-        ${allResults.map((r) => {
-          const summary = r.summary || {};
-          const highlights = (summary.highlights || []).map((h) => `<span class="inline-block bg-tertiary-fixed/20 text-on-tertiary-fixed rounded-full px-3 py-1 text-xs font-semibold mb-1">${h}</span>`).join(" ");
-          const warnings = (summary.warnings || []).map((w) => `<span class="inline-block bg-error-container text-on-error-container rounded-full px-3 py-1 text-xs font-semibold mb-1">${w}</span>`).join(" ");
-          return `<div class="text-center">
-            <div class="font-bold text-sm mb-2 text-primary">${r.city}</div>
-            <div class="mb-2">${highlights || `<span class="text-xs text-on-surface-variant">${EMPTY_TEXT}</span>`}</div>
-            <div>${warnings || `<span class="text-xs text-on-surface-variant">אין אזהרות</span>`}</div>
-          </div>`;
-        }).join("")}
-      </div>
-    </div>`);
-
-    // Missing categories
-    const missingSection = renderCategorySection("missing_categories", "קטגוריות חסרות", `<div class="p-6">
-      <div class="grid gap-4" style="grid-template-columns: ${'1fr '.repeat(allResults.length)}">
-        ${allResults.map((r) => {
-          const completeness = r.data_completeness || {};
-          const missing = (completeness.missing_categories || []).map((c) => `<span class="inline-block bg-surface-container-high text-on-surface-variant rounded-full px-3 py-1 text-xs font-semibold mb-1">${c}</span>`).join(" ");
-          return `<div class="text-center">
-            <div class="font-bold text-sm mb-2 text-primary">${r.city}</div>
-            <div>${missing || `<span class="inline-block bg-tertiary-fixed/20 text-on-tertiary-fixed rounded-full px-3 py-1 text-xs font-semibold">הכל זמין</span>`}</div>
-          </div>`;
-        }).join("")}
-      </div>
-    </div>`);
 
     const minColWidth = Math.max(600, allResults.length * 200 + 200);
 
@@ -2026,8 +2030,6 @@
             ${qolSection}
             ${eduSection}
             ${safetySection}
-            ${insightsSection}
-            ${missingSection}
           </div>
         </div>
         <div class="p-4 text-center">
@@ -2185,6 +2187,7 @@
         parent1_income: Number(formData.get("parent1Income")) || 0,
         parent2_income: Number(formData.get("parent2Income")) || 0,
         desired_rooms: Number(formData.get("desiredRooms")) || null,
+        apartment_sqm: Number(formData.get("apartmentSqm")) || null,
         children
       },
       parent1: {

@@ -9,6 +9,7 @@ import pandas as pd
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+from arnona_calculator import calculate_arnona_monthly_from_avg, ROOM_TO_SQM
 from commute import get_commute
 from config import load_env_file
 from schemas import (
@@ -43,17 +44,14 @@ DB_CONFIG = {
 
 PRIVATE_CAR_COST_PER_KM = 0.70
 ELECTRIC_CAR_COST_PER_KM = 0.30
-
 PUBLIC_TRANSPORT_MONTHLY_0_40 = 255
 PUBLIC_TRANSPORT_MONTHLY_40_74 = 410
 PUBLIC_TRANSPORT_MONTHLY_75_PLUS = 610
-
+# 52 weeks / 12 months — more accurate than rounding to 4
 AVERAGE_WEEKS_PER_MONTH = 4.33
-
 
 def get_connection():
     return psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
-
 
 def next_departure_timestamp(
     departure_hhmm: str,
@@ -77,6 +75,7 @@ def next_departure_timestamp(
         )
     else:
         dt = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        # if the time already passed today, use tomorrow so Google gets a future timestamp
         if dt < now:
             dt += timedelta(days=1)
 
@@ -136,6 +135,7 @@ class DataRepo:
     @classmethod
     def _fuzzy_hebrew_key(cls, text: str) -> str:
         """Build a looser key to tolerate missing or extra yod characters."""
+        # yod (\u05d9) is commonly omitted or doubled in Hebrew place names (e.g. "\u05e7\u05e8\u05d9\u05ea" vs "\u05e7\u05e8\u05d9\u05d9\u05ea")
         return cls._normalize_hebrew(text).replace("\u05d9", "")
 
     @classmethod
@@ -148,6 +148,8 @@ class DataRepo:
         seen = {normalized_query}
 
         tokens = normalized_query.split()
+        # progressive prefixes (kind=1) rank above individual tokens (kind=2) so that
+        # "רמת גן" matches "רמת" before it can match a city whose name is just "גן"
         for size in range(len(tokens) - 1, 0, -1):
             phrase = " ".join(tokens[:size])
             if phrase not in seen:
@@ -284,6 +286,7 @@ class DataRepo:
                 rank[0],
                 rank[1],
                 len(display_name),
+                # negative population so larger cities float up when match quality is equal
                 -(int(population) if population is not None else 0),
                 display_name,
                 {
@@ -572,6 +575,19 @@ class DataRepo:
 
         return int(row["settlements_count"]) if row and row["settlements_count"] is not None else 0
 
+    def get_arnona_price_per_sqm_by_settlement_id(self, settlement_id: int) -> dict | None:
+        query = """
+            SELECT settlement_id, avg_price_per_sqm, source_year
+            FROM arnona_price_per_sqm
+            WHERE settlement_id = %s
+            LIMIT 1;
+        """
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (settlement_id,))
+                row = cur.fetchone()
+        return dict(row) if row else None
+
     def get_social_economic_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT
@@ -757,6 +773,7 @@ class DataRepo:
             district_rent = self._lookup_rent(self.rental_district_df, district_code, room_col)
 
         if nadlan_rent is not None and district_rent is not None:
+            # take the higher of the two sources as a conservative cost estimate
             chosen = max(nadlan_rent, district_rent)
             return {"rent": round(chosen, 2), "source": "both"}
         if nadlan_rent is not None:
@@ -784,6 +801,7 @@ def calculate_rate_per_1000(
     if not count or not population_total:
         return 0.0
 
+    # use per-100 for tiny settlements to avoid rates that display as 0.0x per 1000
     multiplier = 100 if float(population_total) < 1000 else 1000
     return round((float(count) / float(population_total)) * multiplier, 2)
 
@@ -857,10 +875,10 @@ def calculate_average_cars_per_household(
 def format_rank_place(rank: int | None, total_settlements: int) -> dict | None:
     if rank is None:
         return None
-
     display_place = None
     percentile = 0
     if total_settlements > 0:
+        # rank 1 = most peripheral (worst); invert so display_place 1 = best for the user
         display_place = total_settlements - rank + 1
         percentile = round((rank / total_settlements) * 100, 1)
 
@@ -1192,6 +1210,18 @@ def calculate_city_data(
 
     rent_monthly = rent_result["rent"]
 
+    # Arnona: estimate monthly cost from CBS settlement average × SQM.
+    # Falls back to ROOM_TO_SQM[desired_rooms] when the user leaves the SQM field blank.
+    arnona_monthly = None
+    apartment_sqm = family.get("apartment_sqm")
+    if apartment_sqm is None and desired_rooms in ROOM_TO_SQM:
+        apartment_sqm = float(ROOM_TO_SQM[desired_rooms])
+    if apartment_sqm is not None and apartment_sqm > 0:
+        arnona_data = repo.get_arnona_price_per_sqm_by_settlement_id(settlement_id)
+        avg_price = (arnona_data or {}).get("avg_price_per_sqm")
+        if avg_price is not None and avg_price > 0:
+            arnona_monthly = calculate_arnona_monthly_from_avg(apartment_sqm, float(avg_price))
+
     total_monthly_expenses = 0.0
     has_any_cost = False
 
@@ -1200,6 +1230,9 @@ def calculate_city_data(
         has_any_cost = True
     if rent_monthly is not None:
         total_monthly_expenses += rent_monthly
+        has_any_cost = True
+    if arnona_monthly is not None:
+        total_monthly_expenses += arnona_monthly
         has_any_cost = True
 
     return {
@@ -1210,9 +1243,11 @@ def calculate_city_data(
             "parent1_income": family.get("parent1_income"),
             "parent2_income": family.get("parent2_income"),
             "desired_rooms": desired_rooms,
+            "apartment_sqm": apartment_sqm,
             "children": family.get("children", []),
         },
         "rent_monthly": rent_monthly,
+        "arnona_monthly": arnona_monthly,
         "rent_source": rent_result["source"],
         "parent1_commute": parent1_commute,
         "parent2_commute": parent2_commute,
@@ -1355,6 +1390,7 @@ def map_city_result(city_data: dict) -> CityCompareResultOut:
         rent_source=city_data.get("rent_source"),
         costs=CostsOut(
             rent_monthly=city_data.get("rent_monthly"),
+            arnona_monthly=city_data.get("arnona_monthly"),
             commute_monthly=city_data.get("total_commute_cost_monthly"),
             total_monthly=city_data.get("total_monthly_expenses"),
         ),
@@ -1413,6 +1449,7 @@ def build_compare_response(
                 parent1_income=family.get("parent1_income"),
                 parent2_income=family.get("parent2_income"),
                 desired_rooms=family.get("desired_rooms"),
+                apartment_sqm=family.get("apartment_sqm"),
                 children_count=len(family.get("children", [])),
             ),
         ),
