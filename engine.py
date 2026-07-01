@@ -50,9 +50,11 @@ PUBLIC_TRANSPORT_MONTHLY_75_PLUS = 610
 # 52 weeks / 12 months — more accurate than rounding to 4
 AVERAGE_WEEKS_PER_MONTH = 4.33
 
+# Opens a fresh connection to PostgreSQL; called once per query throughout DataRepo.
 def get_connection():
     return psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
 
+# Converts a departure time like "08:30" into a Unix timestamp for the Google Maps API.
 def next_departure_timestamp(
     departure_hhmm: str,
     departure_date: str | None = None
@@ -99,12 +101,14 @@ class DataRepo:
         ),
     }
 
+    # Loads CSV/Excel files into memory at startup so they don't need re-reading on every request.
     def __init__(self):
         self.tax_benefits_df = self._load_tax_benefits()
         self.crime_cluster_counts_df = self._load_crime_cluster_counts()
         self.rental_nadlan_df = self._load_rental_csv("rental_data_nadlan_2025.csv")
         self.rental_district_df = self._load_rental_csv("rental_data_2025.csv")
 
+    # Dead code: this definition is immediately overridden by the second _normalize_hebrew below.
     @staticmethod
     def _normalize_hebrew(text: str) -> str:
         """Normalize common Hebrew spelling variations for fuzzy matching."""
@@ -138,6 +142,7 @@ class DataRepo:
         # yod (\u05d9) is commonly omitted or doubled in Hebrew place names (e.g. "\u05e7\u05e8\u05d9\u05ea" vs "\u05e7\u05e8\u05d9\u05d9\u05ea")
         return cls._normalize_hebrew(text).replace("\u05d9", "")
 
+    # Breaks a search query into candidate strings tagged by priority: full phrase (0), prefixes (1), tokens (2).
     @classmethod
     def _query_match_variants(cls, query: str) -> list[tuple[int, str]]:
         normalized_query = cls._normalize_hebrew(query)
@@ -163,10 +168,12 @@ class DataRepo:
 
         return variants
 
+    # Returns the display name for a settlement, using the hardcoded override for ambiguous names.
     @classmethod
     def _get_display_name(cls, settlement_id: int, settlement_name: str | None = None) -> str:
         return cls.SETTLEMENT_DISPLAY_NAMES.get(settlement_id, settlement_name or "")
 
+    # Returns all names a settlement should be searchable by: official name, display override, and aliases.
     @classmethod
     def _get_search_names(cls, settlement_id: int, settlement_name: str | None = None) -> list[str]:
         names: list[str] = []
@@ -190,6 +197,7 @@ class DataRepo:
 
         return unique_names
 
+    # Checks if the query matches a known alias and returns the canonical settlement ID.
     @classmethod
     def _resolve_alias_settlement_id(cls, query: str) -> int | None:
         normalized_query = cls._normalize_hebrew(query)
@@ -206,6 +214,7 @@ class DataRepo:
 
         return None
 
+    # Scores how well a query matches a settlement name; returns (quality, position) where lower = better.
     @classmethod
     def _settlement_match_rank(cls, query: str, settlement_name: str) -> tuple[int, int] | None:
         normalized_name = cls._normalize_hebrew(settlement_name)
@@ -299,6 +308,7 @@ class DataRepo:
         results.sort(key=lambda item: item[:-1])
         return [item[-1] for item in results[:limit]]
 
+    # Looks up a city by name; tries alias resolution first, then exact match, then fuzzy Hebrew fallback.
     def get_general_info_by_city_name(self, city_name: str) -> dict | None:
         alias_match_settlement_id = self._resolve_alias_settlement_id(city_name)
         if alias_match_settlement_id is not None:
@@ -410,6 +420,7 @@ class DataRepo:
         )
         return result
 
+    # Fetches the number of private cars registered in a settlement.
     def get_transport_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT
@@ -426,6 +437,7 @@ class DataRepo:
                 row = cur.fetchone()
         return dict(row) if row else None
 
+    # Fetches the number of households in a settlement.
     def get_households_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT
@@ -443,6 +455,7 @@ class DataRepo:
                 row = cur.fetchone()
         return dict(row) if row else None
 
+    # Fetches age distribution and religion breakdown; may return multiple rows (one per religion group).
     def get_age_and_religion_by_settlement_id(self, settlement_id: int) -> list[dict]:
         query = """
             SELECT
@@ -463,6 +476,7 @@ class DataRepo:
                 rows = cur.fetchall()
         return [dict(row) for row in rows]
 
+    # Looks up a settlement's basic record (ID, district) by name, with alias resolution.
     def get_settlement_by_name(self, settlement_name: str) -> dict | None:
         alias_match_settlement_id = self._resolve_alias_settlement_id(settlement_name)
         if alias_match_settlement_id is not None:
@@ -512,6 +526,7 @@ class DataRepo:
         )
         return result
 
+    # Fetches all CBS education statistics for a settlement (schools, classes, dropout rate, bagrut rate).
     def get_education_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT
@@ -545,6 +560,7 @@ class DataRepo:
 
         return dict(row) if row else None
 
+    # Fetches the CBS peripherality and accessibility ranks for a settlement.
     def get_periphery_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT
@@ -563,6 +579,7 @@ class DataRepo:
 
         return dict(row) if row else None
 
+    # Returns the total number of settlements in the periphery table, used as the rank denominator.
     def get_periphery_settlements_count(self) -> int:
         query = """
             SELECT COUNT(*) AS settlements_count
@@ -575,6 +592,7 @@ class DataRepo:
 
         return int(row["settlements_count"]) if row and row["settlements_count"] is not None else 0
 
+    # Fetches the CBS average annual arnona price per square meter for a settlement.
     def get_arnona_price_per_sqm_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT settlement_id, avg_price_per_sqm, source_year
@@ -588,6 +606,7 @@ class DataRepo:
                 row = cur.fetchone()
         return dict(row) if row else None
 
+    # Fetches the CBS socio-economic cluster score (1–10) for a settlement.
     def get_social_economic_by_settlement_id(self, settlement_id: int) -> dict | None:
         query = """
             SELECT
@@ -605,6 +624,7 @@ class DataRepo:
 
         return dict(row) if row else None
 
+    # Reads crime_statistics.csv and pivots it into per-settlement counts for each of the 3 severity clusters.
     def _load_crime_cluster_counts(self) -> pd.DataFrame:
         base_dir = Path(__file__).resolve().parent
         file_path = base_dir / "data" / "crime_statistics.csv"
@@ -661,6 +681,7 @@ class DataRepo:
             ["settlement_id", "cluster_1_count", "cluster_2_count", "cluster_3_count"]
         ]
 
+    # Looks up pre-loaded crime cluster counts for a settlement from the in-memory DataFrame.
     def get_crime_cluster_counts_by_settlement_id(self, settlement_id: int) -> dict | None:
         match = self.crime_cluster_counts_df[
             self.crime_cluster_counts_df["settlement_id"] == settlement_id
@@ -678,6 +699,7 @@ class DataRepo:
             "cluster_3_count": int(row["cluster_3_count"]),
         }
 
+    # Reads the income tax benefit Excel file into a DataFrame; called once at startup.
     def _load_tax_benefits(self) -> pd.DataFrame:
         base_dir = Path(__file__).resolve().parent
         file_path = base_dir / "data" / "mas_2026.xlsx"
@@ -714,6 +736,7 @@ class DataRepo:
 
         return df
 
+    # Looks up the peripheral area income tax rate and annual ceiling for a settlement.
     def get_tax_benefit_by_settlement_id(self, settlement_id: int) -> dict | None:
         match = self.tax_benefits_df[
             self.tax_benefits_df["settlement_id"] == settlement_id
@@ -731,6 +754,7 @@ class DataRepo:
             "tax_ceiling_2026": None if pd.isna(row["tax_ceiling_2026"]) else float(row["tax_ceiling_2026"]),
         }
 
+    # Reads a rental price CSV into a DataFrame; called once at startup for each data source.
     @staticmethod
     def _load_rental_csv(filename: str) -> pd.DataFrame:
         base_dir = Path(__file__).resolve().parent
@@ -748,6 +772,7 @@ class DataRepo:
         df["settlement_id"] = df["settlement_id"].astype(int)
         return df
 
+    # Looks up the monthly rent for a specific settlement/district and room count in a DataFrame.
     def _lookup_rent(self, df: pd.DataFrame, lookup_id: int, room_col: str) -> float | None:
         match = df[df["settlement_id"] == lookup_id]
         if match.empty:
@@ -757,6 +782,7 @@ class DataRepo:
             return None
         return float(value)
 
+    # Returns the best available monthly rent estimate, preferring settlement-level data over district averages.
     def get_rent_for_settlement(
         self,
         settlement_id: int,
@@ -783,10 +809,12 @@ class DataRepo:
         return {"rent": None, "source": None}
 
 
+# Converts work days per week to average monthly work days using 4.33 weeks/month.
 def calculate_monthly_work_days(work_days_per_week: int) -> float:
     return round(work_days_per_week * AVERAGE_WEEKS_PER_MONTH, 2)
 
 
+# Divides two numbers safely, returning 0.0 if either value is zero or None.
 def safe_divide(numerator: int | float | None, denominator: int | float | None) -> float:
     if not numerator or not denominator:
         return 0.0
@@ -806,6 +834,7 @@ def calculate_rate_per_1000(
     return round((float(count) / float(population_total)) * multiplier, 2)
 
 
+# Picks key education fields from the raw DB row and derives average students per class.
 def build_education_summary(education: dict | None) -> dict | None:
     if not education:
         return None
@@ -840,6 +869,7 @@ def build_education_summary(education: dict | None) -> dict | None:
     }
 
 
+# Extracts age and religion fields from raw DB rows into a clean list; returns [] if data is missing.
 def build_age_and_religion_summary(age_and_religion_rows: list[dict] | None) -> list[dict]:
     if not age_and_religion_rows:
         return []
@@ -857,6 +887,7 @@ def build_age_and_religion_summary(age_and_religion_rows: list[dict] | None) -> 
     ]
 
 
+# Divides total registered private cars by number of households to get the average per household.
 def calculate_average_cars_per_household(
     transport: dict | None,
     households_data: dict | None,
@@ -895,6 +926,7 @@ def format_rank_place(rank: int | None, total_settlements: int) -> dict | None:
     }
 
 
+# Formats both CBS periphery ranks into display-ready structures using format_rank_place.
 def build_periphery_summary(
     periphery: dict | None,
     total_settlements: int,
@@ -915,6 +947,7 @@ def build_periphery_summary(
     }
 
 
+# Formats the socio-economic cluster score (1–10) with a human-readable summary string.
 def build_social_economic_summary(social_economic: dict | None) -> dict | None:
     if not social_economic:
         return None
@@ -929,6 +962,7 @@ def build_social_economic_summary(social_economic: dict | None) -> dict | None:
     }
 
 
+# Converts raw crime counts into per-1,000-residents rates for each of 3 severity levels.
 def build_crime_statistics_summary(
     crime_cluster_counts: dict | None,
     population_total: int | float | None,
@@ -955,6 +989,7 @@ def build_crime_statistics_summary(
     }
 
 
+# Calculates the daily round-trip fuel/wear cost for driving (distance × 2 × cost_per_km).
 def calculate_private_car_cost(distance_km: float, cost_per_km: float) -> dict:
     daily_cost = round(distance_km * 2 * cost_per_km, 2)
     return {
@@ -962,6 +997,7 @@ def calculate_private_car_cost(distance_km: float, cost_per_km: float) -> dict:
     }
 
 
+# Returns the monthly transit pass cost based on distance tiers set by Israeli transport law.
 def calculate_public_transport_monthly_cost(distance_km: float) -> float:
     if distance_km < 0:
         raise ValueError("distance_km must be >= 0")
@@ -975,6 +1011,7 @@ def calculate_public_transport_monthly_cost(distance_km: float) -> float:
     return float(PUBLIC_TRANSPORT_MONTHLY_75_PLUS)
 
 
+# Dispatches to the right cost formula based on commute mode and returns daily and monthly cost.
 def calculate_commute_cost(
     commute_mode: str,
     distance_km: float,
@@ -1025,6 +1062,7 @@ def normalize_tax_rate(rate_value: float | None) -> float:
     return rate_value
 
 
+# Calculates the annual income tax benefit for one parent based on their income, the rate, and the ceiling.
 def calculate_tax_benefit_for_income(
     monthly_income: float | None,
     tax_rate: float | None,
@@ -1058,6 +1096,7 @@ def calculate_tax_benefit_for_income(
     }
 
 
+# Runs the tax benefit calculation for both parents and sums the results into a family total.
 def calculate_family_tax_benefit(
     family: dict,
     tax_benefit_info: dict | None,
@@ -1087,19 +1126,26 @@ def calculate_family_tax_benefit(
         tax_ceiling=tax_ceiling,
     )
 
-    total_benefit_annual = (
-        parent1_result["benefit_annual"] + parent2_result["benefit_annual"]
-    )
+    combined_annual = parent1_result["annual_income"] + parent2_result["annual_income"]
+    normalized_rate = normalize_tax_rate(tax_rate)
+
+    if tax_ceiling is None or tax_ceiling <= 0:
+        eligible_combined = combined_annual
+    else:
+        eligible_combined = min(combined_annual, float(tax_ceiling))
+
+    total_benefit_annual = round(eligible_combined * normalized_rate, 2)
 
     return {
         "tax_rate_2026": tax_rate,
         "tax_ceiling_2026": tax_ceiling,
         "parent1": parent1_result,
         "parent2": parent2_result,
-        "total_benefit_annual": round(total_benefit_annual, 2),
+        "total_benefit_annual": total_benefit_annual,
         "total_benefit_monthly_estimated": round(total_benefit_annual / 12, 2),
     }
 
+# Calls Google Maps for one parent's commute and computes the monthly cost; cost fields are null if API fails.
 def calculate_parent_commute(
     city_name: str,
     parent: dict,
@@ -1142,6 +1188,7 @@ def calculate_parent_commute(
         "cost": cost,
     }
 
+# Core function: assembles all data for one city — commute, rent, arnona, education, safety, taxes.
 def calculate_city_data(
     city: str,
     family: dict,
@@ -1270,6 +1317,7 @@ def calculate_city_data(
     }
 
 
+# Maps the internal commute dict to the WorkCommuteOut schema shape expected by the API response.
 def build_work_commute_output(parent_commute: dict | None) -> WorkCommuteOut:
     if not parent_commute:
         return WorkCommuteOut()
@@ -1284,6 +1332,7 @@ def build_work_commute_output(parent_commute: dict | None) -> WorkCommuteOut:
     )
 
 
+# Returns the first age/religion row; used when a settlement has data split by multiple religion groups.
 def pick_primary_age_group(age_and_religion: list[dict] | None) -> dict:
     if not age_and_religion:
         return {}
@@ -1291,6 +1340,7 @@ def pick_primary_age_group(age_and_religion: list[dict] | None) -> dict:
     return age_and_religion[0]
 
 
+# Builds the highlights and warnings list shown at the top of each city card in the UI.
 def build_summary_output(city_data: dict) -> SummaryOut:
     highlights: list[str] = []
     warnings: list[str] = []
@@ -1323,6 +1373,7 @@ def build_summary_output(city_data: dict) -> SummaryOut:
     return SummaryOut(highlights=highlights, warnings=warnings)
 
 
+# Calculates the percentage of data categories available for a city and lists which ones are missing.
 def build_data_completeness_output(city_data: dict) -> DataCompletenessOut:
     categories = {
         "rent": city_data.get("rent_monthly") is not None,
@@ -1352,6 +1403,7 @@ def build_data_completeness_output(city_data: dict) -> DataCompletenessOut:
     )
 
 
+# Maps a rank dict to the RankDisplayOut schema shape; handles both periphery and socio-economic data.
 def map_rank_display(rank_data: dict | None) -> RankDisplayOut | None:
     if not rank_data:
         return None
@@ -1365,6 +1417,7 @@ def map_rank_display(rank_data: dict | None) -> RankDisplayOut | None:
     )
 
 
+# Maps the full internal city data dict to the CityCompareResultOut schema shape for the API response.
 def map_city_result(city_data: dict) -> CityCompareResultOut:
     primary_age_group = pick_primary_age_group(city_data.get("age_and_religion"))
     periphery = city_data.get("periphery") or {}
@@ -1429,6 +1482,7 @@ def map_city_result(city_data: dict) -> CityCompareResultOut:
     )
 
 
+# Wraps all city results into the top-level CompareResponseOut structure with metadata and input summary.
 def build_compare_response(
     cities: list[str],
     family: dict,
@@ -1457,6 +1511,7 @@ def build_compare_response(
     )
 
 
+# Entry point called by the API: loops over requested cities, computes each, and builds the final response.
 def compare_cities(
     cities: list[str],
     family: dict,

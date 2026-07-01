@@ -10,6 +10,7 @@ from engine import (
 
 
 class EngineResponseTests(unittest.TestCase):
+    # 1237/1000 = 1.24 — verifies fractional result is kept, not rounded to a whole number.
     def test_average_cars_per_household_preserves_fractional_value(self):
         self.assertEqual(
             calculate_average_cars_per_household(
@@ -19,6 +20,7 @@ class EngineResponseTests(unittest.TestCase):
             1.24,
         )
 
+    # 98/100 = 0.98 — verifies values below 1 are preserved, not floored to zero.
     def test_average_cars_per_household_keeps_values_below_one(self):
         self.assertEqual(
             calculate_average_cars_per_household(
@@ -28,6 +30,7 @@ class EngineResponseTests(unittest.TestCase):
             0.98,
         )
 
+    # Verifies that prefixes of the full query (kind=1) appear before individual tokens (kind=2) in the output.
     def test_query_match_variants_keep_progressive_prefixes_before_single_tokens(self):
         self.assertEqual(
             DataRepo._query_match_variants("טנא עומרים מרכז"),
@@ -40,6 +43,7 @@ class EngineResponseTests(unittest.TestCase):
             ],
         )
 
+    # Searching by alias "מצודות יהודה" returns the settlement once with its official display name.
     def test_search_settlements_returns_alias_match_once_with_display_name(self):
         repo = DataRepo.__new__(DataRepo)
 
@@ -81,12 +85,14 @@ class EngineResponseTests(unittest.TestCase):
             "population": 987,
         }])
 
+    # All known spelling variants of the alias (with/without spacing and yod) resolve to the same settlement ID.
     def test_settlement_alias_registry_resolves_all_supported_spellings(self):
         self.assertEqual(DataRepo._resolve_alias_settlement_id("בית יתיר"), 3745)
         self.assertEqual(DataRepo._resolve_alias_settlement_id("מצדות יהודה"), 3745)
         self.assertEqual(DataRepo._resolve_alias_settlement_id("מצודות יהודה"), 3745)
         self.assertEqual(DataRepo._resolve_alias_settlement_id("  מצודות   יהודה  "), 3745)
 
+    # "טנא עומרים" matches "טנא" (prefix hit) but does not match "עומר" (unrelated token).
     def test_search_settlements_keeps_prefix_match_when_extra_words_are_added(self):
         repo = DataRepo.__new__(DataRepo)
 
@@ -131,6 +137,7 @@ class EngineResponseTests(unittest.TestCase):
         self.assertEqual(results[0]["id"], 1)
         self.assertEqual(len(results), 1)
 
+    # "טנא עומרים" (exact) ranks above "טנא" (partial prefix) when both are in the result set.
     def test_exact_matches_stay_ranked_above_partial_prefix_fallbacks(self):
         repo = DataRepo.__new__(DataRepo)
 
@@ -176,6 +183,7 @@ class EngineResponseTests(unittest.TestCase):
             ["טנא עומרים", "טנא"],
         )
 
+    # The display name override and the search names list for settlement 3745 are correct and deduplicated.
     def test_settlement_display_name_override_is_stable_and_unique(self):
         self.assertEqual(
             DataRepo._get_display_name(3745, "בית יתיר"),
@@ -192,6 +200,7 @@ class EngineResponseTests(unittest.TestCase):
         )
 
     @patch("engine.get_commute")
+    # When Google Maps returns no distance, cost fields are null but the result dict is still returned.
     def test_calculate_parent_commute_returns_partial_result_when_distance_is_missing(self, mock_get_drive_commute):
         mock_get_drive_commute.return_value = {
             "status": "NO_API_KEY",
@@ -215,6 +224,7 @@ class EngineResponseTests(unittest.TestCase):
         self.assertIsNone(result["cost"]["monthly_cost"])
 
     @patch("engine.get_commute")
+    # Verifies that the commute_mode chosen by the user is passed through to the Google Maps API call.
     def test_calculate_parent_commute_passes_selected_mode_to_commute_lookup(self, mock_get_commute):
         mock_get_commute.return_value = {
             "status": "OK",
@@ -237,6 +247,7 @@ class EngineResponseTests(unittest.TestCase):
         mock_get_commute.assert_called_once()
         self.assertEqual(mock_get_commute.call_args.kwargs["commute_mode"], "public_transport")
 
+    # Verifies that raw engine output is correctly mapped to the full Pydantic response schema shape.
     def test_build_compare_response_maps_raw_engine_data_to_schema_shape(self):
         response = build_compare_response(
             cities=["בית יתיר"],
