@@ -43,6 +43,13 @@ class EngineResponseTests(unittest.TestCase):
             ],
         )
 
+    # Verifies the surviving _normalize_hebrew (the duplicate dead definition above it was removed):
+    # strips nikud/diacritics, collapses maqaf/hyphen/quotes to spaces, and expands קרית -> קריית.
+    def test_normalize_hebrew_strips_diacritics_punctuation_and_expands_qrit(self):
+        self.assertEqual(DataRepo._normalize_hebrew("תֵּל־אָבִיב"), "תל אביב")
+        self.assertEqual(DataRepo._normalize_hebrew('פ"ת'), "פ ת")
+        self.assertEqual(DataRepo._normalize_hebrew("קרית גת"), "קריית גת")
+
     # Searching by alias "מצודות יהודה" returns the settlement once with its official display name.
     def test_search_settlements_returns_alias_match_once_with_display_name(self):
         repo = DataRepo.__new__(DataRepo)

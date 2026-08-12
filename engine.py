@@ -108,20 +108,6 @@ class DataRepo:
         self.rental_nadlan_df = self._load_rental_csv("rental_data_nadlan_2025.csv")
         self.rental_district_df = self._load_rental_csv("rental_data_2025.csv")
 
-    # Dead code: this definition is immediately overridden by the second _normalize_hebrew below.
-    @staticmethod
-    def _normalize_hebrew(text: str) -> str:
-        """Normalize common Hebrew spelling variations for fuzzy matching."""
-        import re
-        t = text.strip()
-        # Remove maqaf (Hebrew hyphen) and regular hyphen
-        t = t.replace("\u05BE", " ").replace("-", " ")
-        # Collapse multiple spaces
-        t = re.sub(r"\s+", " ", t)
-        # Normalize double-yod spelling in Hebrew place names
-        t = t.replace("יי", "י")
-        return t
-
     @staticmethod
     def _normalize_hebrew(text: str) -> str:
         """Normalize common Hebrew spelling variations for fuzzy matching."""
